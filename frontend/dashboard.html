@@ -1,0 +1,717 @@
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setu — Dashboard</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="assets/css/components.css" />
+</head>
+
+<body data-page="dashboard" class="bg-cream text-ink font-sans">
+
+  <!-- Shared sidebar and topbar -->
+  <div id="app-shell"></div>
+
+  <!-- Main Dashboard -->
+  <main class="ml-64 pt-14 min-h-screen">
+    <div class="p-4 md:p-6 space-y-6">
+
+      <!-- Page Header -->
+      <section class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+        <div>
+          <div class="flex flex-wrap items-center gap-3">
+            <h1 class="text-2xl md:text-3xl font-bold tracking-tight">
+              API Integration Health
+            </h1>
+
+            <span class="pill pill-ok">
+              ● Live Ingestion Active
+            </span>
+          </div>
+
+          <p class="text-muted mt-2 text-sm">
+            Watching <strong>34 production endpoints</strong> across 4 upstream partners · Last scan 42s ago
+          </p>
+        </div>
+
+        <div class="flex flex-wrap gap-3">
+          <a href="ui-states.html" class="btn-secondary inline-flex items-center gap-2">
+            <span aria-hidden="true">⟳</span>
+            Trigger Scan Now
+          </a>
+
+          <a href="onboarding.html" class="btn-primary inline-flex items-center gap-2">
+            <span aria-hidden="true">+</span>
+            Add Endpoint
+          </a>
+        </div>
+      </section>
+
+
+      <!-- Statistics Cards -->
+      <section aria-label="Dashboard statistics"
+        class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+
+        <!-- Endpoints monitored -->
+        <article class="stat-card">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-muted font-medium">ENDPOINTS MONITORED</p>
+            <span class="text-brand text-lg" aria-hidden="true">⌘</span>
+          </div>
+
+          <p class="text-3xl font-bold mt-3">34</p>
+
+          <p class="text-sm text-muted mt-3">
+            <span class="text-ok font-semibold">+2 this week</span>
+            · 100% telemetry coverage · 0 skipped
+          </p>
+        </article>
+
+        <!-- Pending approvals -->
+        <a href="diff-approval.html"
+          class="stat-card block hover:border-brand transition-colors"
+          aria-label="2 pending approvals. Open approvals">
+
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-muted font-medium">PENDING APPROVALS</p>
+            <span class="pill pill-bad">Action Required</span>
+          </div>
+
+          <p class="text-3xl font-bold text-bad mt-3">2</p>
+
+          <p class="text-sm text-muted mt-3">
+            1 breaking schema drift · 1 type mismatch
+          </p>
+
+          <span class="text-brand text-sm font-medium mt-2 inline-block">
+            Review approvals →
+          </span>
+        </a>
+
+        <!-- Schema changes -->
+        <article class="stat-card">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-muted font-medium">SCHEMA CHANGES (7D)</p>
+            <span class="text-ai text-lg" aria-hidden="true">✳</span>
+          </div>
+
+          <p class="text-3xl font-bold mt-3">11</p>
+
+          <p class="text-sm text-muted mt-3">
+            9 fixes applied · 2 awaiting action
+          </p>
+
+          <p class="text-sm text-muted mt-1">
+            Avg review time: <strong>4.2m</strong>
+          </p>
+        </article>
+
+        <!-- Average response time -->
+        <article class="stat-card">
+          <div class="flex items-center justify-between">
+            <p class="text-sm text-muted font-medium">AVG RESPONSE TIME</p>
+            <span class="text-ok text-lg" aria-hidden="true">↘</span>
+          </div>
+
+          <p class="text-3xl font-bold mt-3">142ms</p>
+
+          <p class="text-sm mt-3">
+            <span class="text-ok font-semibold">−18ms</span>
+            · 99th percentile: 380ms
+          </p>
+        </article>
+
+      </section>
+
+
+      <!-- Main Dashboard Grid -->
+      <section class="grid grid-cols-1 2xl:grid-cols-3 gap-6">
+
+        <!-- Endpoint Table -->
+        <div class="2xl:col-span-2 card min-w-0">
+
+          <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-3 mb-5">
+            <div>
+              <h2 class="text-lg font-semibold">Monitored Endpoints</h2>
+              <p class="text-sm text-muted mt-1">
+                Schema health and response performance
+              </p>
+            </div>
+          </div>
+
+          <!-- Filters -->
+          <div class="space-y-3 mb-4">
+
+            <label for="endpointSearch" class="sr-only">
+              Filter endpoint name or path
+            </label>
+
+            <input
+              id="endpointSearch"
+              type="search"
+              placeholder="Filter endpoint name or path..."
+              class="input-base w-full"
+            />
+
+            <div class="flex flex-wrap items-center gap-2">
+
+              <div class="flex flex-wrap gap-1" role="group" aria-label="Filter by HTTP method">
+                <button class="method-filter btn-secondary text-sm" data-method="ALL" aria-pressed="true">ALL</button>
+                <button class="method-filter btn-secondary text-sm" data-method="GET" aria-pressed="false">GET</button>
+                <button class="method-filter btn-secondary text-sm" data-method="POST" aria-pressed="false">POST</button>
+                <button class="method-filter btn-secondary text-sm" data-method="PUT" aria-pressed="false">PUT</button>
+                <button class="method-filter btn-secondary text-sm" data-method="DEL" aria-pressed="false">DEL</button>
+              </div>
+
+              <label for="statusFilter" class="sr-only">
+                Filter by status
+              </label>
+
+              <select id="statusFilter" class="input-base text-sm">
+                <option value="ALL">All Statuses</option>
+                <option value="Schema Drift">Schema Drift</option>
+                <option value="Slow">Slow</option>
+                <option value="Healthy">Healthy</option>
+              </select>
+            </div>
+          </div>
+
+          <!-- Table -->
+          <div class="overflow-x-auto">
+            <table class="table-base w-full text-sm">
+              <thead>
+                <tr>
+                  <th scope="col">ENDPOINT</th>
+                  <th scope="col">METHOD</th>
+                  <th scope="col">STATUS</th>
+                  <th scope="col">LATENCY (10M)</th>
+                  <th scope="col">LAST SEEN</th>
+                  <th scope="col">ACTIONS</th>
+                </tr>
+              </thead>
+
+              <tbody id="endpointTableBody">
+
+                <!-- Stripe -->
+                <tr data-method="POST" data-status="Schema Drift"
+                    data-search="/api/v2/webhooks/stripe stripe webhook listener">
+                  <td>
+                    <div class="font-semibold">Stripe Webhook Listener</div>
+                    <code class="text-xs text-muted font-mono break-all">/api/v2/webhooks/stripe</code>
+                  </td>
+
+                  <td>
+                    <span class="font-mono text-xs font-semibold">POST</span>
+                  </td>
+
+                  <td>
+                    <span class="pill pill-bad">● Schema Drift</span>
+                  </td>
+
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <span>194ms</span>
+                      <svg viewBox="0 0 80 24" class="w-20 h-6 shrink-0" role="img" aria-label="Latency trend">
+                        <polyline points="0,16 10,13 20,18 30,8 40,12 50,5 60,15 70,6 80,10"
+                          fill="none" stroke="currentColor" stroke-width="2" class="text-bad"/>
+                      </svg>
+                    </div>
+                  </td>
+
+                  <td class="text-muted whitespace-nowrap">12s ago</td>
+
+                  <td>
+                    <a href="diff-approval.html" class="text-brand font-medium whitespace-nowrap">
+                      Review Diff →
+                    </a>
+                  </td>
+                </tr>
+
+                <!-- Customer Billing -->
+                <tr data-method="GET" data-status="Slow"
+                    data-search="/api/v1/customers/billing customer billing sync">
+                  <td>
+                    <div class="font-semibold">Customer Billing Sync</div>
+                    <code class="text-xs text-muted font-mono break-all">/api/v1/customers/billing</code>
+                  </td>
+
+                  <td>
+                    <span class="font-mono text-xs font-semibold">GET</span>
+                  </td>
+
+                  <td>
+                    <span class="pill pill-warn">● Slow</span>
+                  </td>
+
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <span class="font-semibold text-warn">1,480ms</span>
+                      <svg viewBox="0 0 80 24" class="w-20 h-6 shrink-0" role="img" aria-label="Latency trend">
+                        <polyline points="0,20 10,18 20,8 30,10 40,3 50,8 60,2 70,5 80,1"
+                          fill="none" stroke="currentColor" stroke-width="2" class="text-warn"/>
+                      </svg>
+                    </div>
+                  </td>
+
+                  <td class="text-muted whitespace-nowrap">34s ago</td>
+
+                  <td>
+                    <a href="latency.html" class="text-brand font-medium whitespace-nowrap">
+                      Inspect →
+                    </a>
+                  </td>
+                </tr>
+
+                <!-- Identity Verification -->
+                <tr data-method="POST" data-status="Healthy"
+                    data-search="/v3/kyc/verify identity verification core">
+                  <td>
+                    <div class="font-semibold">Identity Verification Core</div>
+                    <code class="text-xs text-muted font-mono break-all">/v3/kyc/verify</code>
+                  </td>
+
+                  <td>
+                    <span class="font-mono text-xs font-semibold">POST</span>
+                  </td>
+
+                  <td>
+                    <span class="pill pill-ok">● Healthy</span>
+                  </td>
+
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <span>184ms</span>
+                      <svg viewBox="0 0 80 24" class="w-20 h-6 shrink-0" role="img" aria-label="Latency trend">
+                        <polyline points="0,13 10,10 20,12 30,9 40,14 50,10 60,11 70,9 80,12"
+                          fill="none" stroke="currentColor" stroke-width="2" class="text-ok"/>
+                      </svg>
+                    </div>
+                  </td>
+
+                  <td class="text-muted whitespace-nowrap">45s ago</td>
+
+                  <td class="text-muted">—</td>
+                </tr>
+
+                <!-- Orders and Cart -->
+                <tr data-method="POST" data-status="Healthy"
+                    data-search="/v2/checkout/session orders cart stream healed">
+                  <td>
+                    <div class="font-semibold flex flex-wrap items-center gap-2">
+                      Orders &amp; Cart Stream
+                      <span class="pill pill-ai">Healed</span>
+                    </div>
+                    <code class="text-xs text-muted font-mono break-all">/v2/checkout/session</code>
+                  </td>
+
+                  <td>
+                    <span class="font-mono text-xs font-semibold">POST</span>
+                  </td>
+
+                  <td>
+                    <span class="pill pill-ok">● Healthy</span>
+                  </td>
+
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <span>92ms</span>
+                      <svg viewBox="0 0 80 24" class="w-20 h-6 shrink-0" role="img" aria-label="Latency trend">
+                        <polyline points="0,14 10,13 20,10 30,12 40,9 50,11 60,8 70,10 80,7"
+                          fill="none" stroke="currentColor" stroke-width="2" class="text-ok"/>
+                      </svg>
+                    </div>
+                  </td>
+
+                  <td class="text-muted whitespace-nowrap">1m ago</td>
+
+                  <td class="text-muted">—</td>
+                </tr>
+
+                <!-- Inventory -->
+                <tr data-method="GET" data-status="Schema Drift"
+                    data-search="/api/v1/warehouse/sync inventory stock poll">
+                  <td>
+                    <div class="font-semibold">Inventory Stock Poll</div>
+                    <code class="text-xs text-muted font-mono break-all">/api/v1/warehouse/sync</code>
+                  </td>
+
+                  <td>
+                    <span class="font-mono text-xs font-semibold">GET</span>
+                  </td>
+
+                  <td>
+                    <span class="pill pill-bad">● Schema Drift</span>
+                  </td>
+
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <span>310ms</span>
+                      <svg viewBox="0 0 80 24" class="w-20 h-6 shrink-0" role="img" aria-label="Latency trend">
+                        <polyline points="0,14 10,10 20,13 30,7 40,10 50,4 60,11 70,7 80,5"
+                          fill="none" stroke="currentColor" stroke-width="2" class="text-bad"/>
+                      </svg>
+                    </div>
+                  </td>
+
+                  <td class="text-muted whitespace-nowrap">2m ago</td>
+
+                  <td>
+                    <a href="diff-approval.html" class="text-brand font-medium whitespace-nowrap">
+                      Review Diff →
+                    </a>
+                  </td>
+                </tr>
+
+                <!-- Logistics -->
+                <tr data-method="PUT" data-status="Healthy"
+                    data-search="/v1/shipping/quote logistics rates calculator">
+                  <td>
+                    <div class="font-semibold">Logistics Rates Calculator</div>
+                    <code class="text-xs text-muted font-mono break-all">/v1/shipping/quote</code>
+                  </td>
+
+                  <td>
+                    <span class="font-mono text-xs font-semibold">PUT</span>
+                  </td>
+
+                  <td>
+                    <span class="pill pill-ok">● Healthy</span>
+                  </td>
+
+                  <td>
+                    <div class="flex items-center gap-2">
+                      <span>210ms</span>
+                      <svg viewBox="0 0 80 24" class="w-20 h-6 shrink-0" role="img" aria-label="Latency trend">
+                        <polyline points="0,12 10,14 20,10 30,12 40,8 50,11 60,9 70,12 80,10"
+                          fill="none" stroke="currentColor" stroke-width="2" class="text-ok"/>
+                      </svg>
+                    </div>
+                  </td>
+
+                  <td class="text-muted whitespace-nowrap">4m ago</td>
+
+                  <td class="text-muted">—</td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <p id="emptyTableMessage" class="hidden text-center text-muted py-8">
+            No endpoints match your filters.
+          </p>
+
+          <!-- Table Footer -->
+          <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 pt-4 mt-4 border-t border-slate-200">
+            <p id="tableCount" class="text-sm text-muted">
+              Showing 6 of 34 configured routes
+            </p>
+
+            <div class="flex items-center gap-2 text-sm">
+              <button class="btn-secondary" disabled aria-label="Previous page">
+                Previous
+              </button>
+
+              <span class="font-medium">1/6</span>
+
+              <button class="btn-secondary" disabled aria-label="Next page">
+                Next
+              </button>
+            </div>
+          </div>
+
+        </div>
+
+
+        <!-- Right Column -->
+        <div class="space-y-6">
+
+          <!-- Recent Audit Feed -->
+          <section class="card">
+
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-lg font-semibold">Recent Audit Feed</h2>
+              <span class="pill pill-ok">● Live log</span>
+            </div>
+
+            <div class="space-y-5">
+
+              <!-- Event 1 -->
+              <article class="flex gap-3">
+                <div class="w-2 h-2 rounded-full bg-bad mt-2 shrink-0"></div>
+
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="font-semibold text-sm">Schema Drift Detected</h3>
+                    <span class="text-xs text-muted">2m ago</span>
+                  </div>
+
+                  <p class="text-sm text-muted mt-1">
+                    <code class="font-mono text-xs">/api/v2/webhooks/stripe</code>
+                    missing payload key
+                    <code class="font-mono text-xs">customer_tax_id</code>.
+                  </p>
+
+                  <p class="text-xs text-muted mt-1">
+                    Actor: System Watcher
+                  </p>
+
+                  <a href="diff-approval.html" class="text-brand text-sm font-medium inline-block mt-2">
+                    Review →
+                  </a>
+                </div>
+              </article>
+
+              <!-- Event 2 -->
+              <article class="flex gap-3">
+                <div class="w-2 h-2 rounded-full bg-ai mt-2 shrink-0"></div>
+
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="font-semibold text-sm">Fix Approved &amp; Applied</h3>
+                    <span class="text-xs text-muted">14m ago</span>
+                  </div>
+
+                  <p class="text-sm text-muted mt-1">
+                    Sarah Chen approved autonomic LLM schema remediation for
+                    <code class="font-mono text-xs">/v2/checkout/session</code>.
+                  </p>
+
+                  <p class="text-xs text-muted mt-1">
+                    Approver: Sarah Chen · #pr-4029
+                  </p>
+
+                  <a href="history.html" class="text-brand text-sm font-medium inline-block mt-2">
+                    View History →
+                  </a>
+                </div>
+              </article>
+
+              <!-- Event 3 -->
+              <article class="flex gap-3">
+                <div class="w-2 h-2 rounded-full bg-warn mt-2 shrink-0"></div>
+
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="font-semibold text-sm">High Latency Alert</h3>
+                    <span class="text-xs text-muted">1h ago</span>
+                  </div>
+
+                  <p class="text-sm text-muted mt-1">
+                    <code class="font-mono text-xs">/api/v1/customers/billing</code>
+                    exceeded 1,000ms threshold for 3 consecutive automated polls.
+                  </p>
+
+                  <p class="text-xs text-muted mt-1">
+                    Actor: System Watcher
+                  </p>
+
+                  <a href="latency.html" class="text-brand text-sm font-medium inline-block mt-2">
+                    Inspect latency →
+                  </a>
+                </div>
+              </article>
+
+              <!-- Event 4 -->
+              <article class="flex gap-3">
+                <div class="w-2 h-2 rounded-full bg-slate-400 mt-2 shrink-0"></div>
+
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="font-semibold text-sm">Rollback Executed</h3>
+                    <span class="text-xs text-muted">3h ago</span>
+                  </div>
+
+                  <p class="text-sm text-muted mt-1">
+                    Alex Rivera rolled back
+                    <code class="font-mono text-xs">/v3/kyc/verify</code>
+                    to validated schema v2.
+                  </p>
+
+                  <p class="text-xs text-muted mt-1">
+                    v2.1.0 → v2.0.4
+                  </p>
+
+                  <a href="history.html" class="text-brand text-sm font-medium inline-block mt-2">
+                    View History →
+                  </a>
+                </div>
+              </article>
+
+              <!-- Event 5 -->
+              <article class="flex gap-3">
+                <div class="w-2 h-2 rounded-full bg-ok mt-2 shrink-0"></div>
+
+                <div class="min-w-0">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <h3 class="font-semibold text-sm">Auto-healing Verified</h3>
+                    <span class="text-xs text-muted">5h ago</span>
+                  </div>
+
+                  <p class="text-sm text-muted mt-1">
+                    LLM mapping verified with 0% error rate across 1,000 synthetic test assertions.
+                  </p>
+
+                  <p class="text-xs text-muted mt-1">
+                    Actor: LLM Healer
+                  </p>
+                </div>
+              </article>
+
+            </div>
+
+            <a href="history.html"
+              class="btn-secondary block text-center w-full mt-5">
+              View Complete Audit Trail (420 events)
+            </a>
+
+          </section>
+
+
+          <!-- Upstream Gateways -->
+          <section class="card">
+
+            <div class="flex items-center justify-between mb-5">
+              <h2 class="text-lg font-semibold">Upstream Gateways</h2>
+              <span class="pill pill-neutral">4 Connected</span>
+            </div>
+
+            <div class="space-y-4">
+
+              <!-- Gateway 1 -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="w-2.5 h-2.5 rounded-full bg-ok shrink-0"></span>
+                  <div>
+                    <p class="font-medium text-sm">Stripe Production Core</p>
+                    <p class="text-xs text-muted">Operational</p>
+                  </div>
+                </div>
+
+                <span class="font-mono text-sm font-semibold text-ok">99.99%</span>
+              </div>
+
+              <!-- Gateway 2 -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="w-2.5 h-2.5 rounded-full bg-ai shrink-0"></span>
+                  <div>
+                    <p class="font-medium text-sm">Plaid Auth Cluster</p>
+                    <p class="text-xs text-muted">Degraded</p>
+                  </div>
+                </div>
+
+                <span class="pill pill-ai">Degraded</span>
+              </div>
+
+              <!-- Gateway 3 -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="w-2.5 h-2.5 rounded-full bg-ok shrink-0"></span>
+                  <div>
+                    <p class="font-medium text-sm">Twilio Verify API</p>
+                    <p class="text-xs text-muted">Operational</p>
+                  </div>
+                </div>
+
+                <span class="font-mono text-sm font-semibold text-ok">100.0%</span>
+              </div>
+
+              <!-- Gateway 4 -->
+              <div class="flex items-center justify-between gap-3">
+                <div class="flex items-center gap-3 min-w-0">
+                  <span class="w-2.5 h-2.5 rounded-full bg-ok shrink-0"></span>
+                  <div>
+                    <p class="font-medium text-sm">AWS API Gateway</p>
+                    <p class="text-xs text-muted">Operational</p>
+                  </div>
+                </div>
+
+                <span class="font-mono text-sm font-semibold text-ok">99.98%</span>
+              </div>
+
+            </div>
+
+          </section>
+
+        </div>
+      </section>
+
+    </div>
+  </main>
+
+
+  <!-- Dashboard filtering -->
+  <script>
+    const searchInput = document.getElementById("endpointSearch");
+    const statusSelect = document.getElementById("statusFilter");
+    const tableBody = document.getElementById("endpointTableBody");
+    const rows = Array.from(tableBody.querySelectorAll("tr"));
+    const methodButtons = document.querySelectorAll(".method-filter");
+    const emptyMessage = document.getElementById("emptyTableMessage");
+    const tableCount = document.getElementById("tableCount");
+
+    let selectedMethod = "ALL";
+
+    function filterEndpoints() {
+      const searchTerm = searchInput.value.toLowerCase().trim();
+      const selectedStatus = statusSelect.value;
+
+      let visibleCount = 0;
+
+      rows.forEach((row) => {
+        const method = row.dataset.method;
+        const status = row.dataset.status;
+        const searchData = row.dataset.search.toLowerCase();
+
+        const matchesSearch = searchData.includes(searchTerm);
+        const matchesMethod = selectedMethod === "ALL" || method === selectedMethod;
+        const matchesStatus = selectedStatus === "ALL" || status === selectedStatus;
+
+        const isVisible = matchesSearch && matchesMethod && matchesStatus;
+
+        row.classList.toggle("hidden", !isVisible);
+
+        if (isVisible) {
+          visibleCount++;
+        }
+      });
+
+      emptyMessage.classList.toggle("hidden", visibleCount !== 0);
+
+      tableCount.textContent = `Showing ${visibleCount} of 34 configured routes`;
+    }
+
+    searchInput.addEventListener("input", filterEndpoints);
+    statusSelect.addEventListener("change", filterEndpoints);
+
+    methodButtons.forEach((button) => {
+      button.addEventListener("click", () => {
+        selectedMethod = button.dataset.method;
+
+        methodButtons.forEach((btn) => {
+          btn.setAttribute(
+            "aria-pressed",
+            btn === button ? "true" : "false"
+          );
+        });
+
+        filterEndpoints();
+      });
+    });
+  </script>
+
+
+  <!-- Shared scripts -->
+  <script src="assets/js/shell.js"></script>
+  <script src="assets/js/interactions.js"></script>
+
+</body>
+</html>
