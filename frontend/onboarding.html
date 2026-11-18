@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setu — Onboarding</title>
+
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"
+    rel="stylesheet"
+  />
+
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="assets/css/components.css" />
+</head>
+
+<body class="bg-cream text-ink font-sans min-h-screen">
+  <main class="min-h-screen grid lg:grid-cols-2">
+    <!-- Brand / intro panel -->
+    <section class="flex flex-col justify-between px-8 py-8 sm:px-12 lg:px-16 xl:px-20">
+      <div>
+        <a href="index.html" class="inline-flex items-center gap-3" aria-label="Setu home">
+          <img
+            src="assets/img/logo.svg"
+            alt="Setu"
+            class="h-9 w-auto"
+          />
+          <span class="text-lg font-semibold tracking-tight">Setu</span>
+        </a>
+      </div>
+
+      <div class="max-w-xl py-16 lg:py-0">
+        <p class="mb-5 text-sm font-semibold uppercase tracking-[0.18em] text-muted">
+          Reliable API infrastructure
+        </p>
+
+        <h1 class="text-4xl font-semibold leading-tight tracking-tight sm:text-5xl">
+          Reliable APIs. Stronger connections.
+        </h1>
+
+        <p class="mt-6 max-w-lg text-base leading-7 text-muted sm:text-lg">
+          Connect your first endpoint and give every request a more reliable path.
+        </p>
+      </div>
+
+      <div class="hidden text-sm text-muted lg:block">
+        Monitor schema drift, latency, and automated fixes with a human approval gate.
+      </div>
+    </section>
+
+    <!-- Onboarding form -->
+    <section class="flex items-center justify-center px-5 py-10 sm:px-8 lg:px-12">
+      <div class="w-full max-w-xl">
+        <div class="card p-6 sm:p-8 lg:p-10">
+          <div class="mb-8">
+            <span class="pill inline-flex items-center bg-slate-100 text-slate-600">
+              STEP 1 OF 1
+            </span>
+
+            <h2 class="mt-5 text-2xl font-semibold tracking-tight sm:text-3xl">
+              Add your first endpoint
+            </h2>
+
+            <p class="mt-2 text-sm leading-6 text-muted sm:text-base">
+              Start with a base URL. SETU will take it from here.
+            </p>
+          </div>
+
+          <form action="dashboard.html" method="get" class="space-y-6">
+            <div>
+              <label for="base-url" class="mb-2 block text-sm font-semibold text-ink">
+                Base URL
+              </label>
+
+              <input
+                id="base-url"
+                name="base-url"
+                type="url"
+                placeholder="https://api.example.com"
+                autocomplete="url"
+                class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition placeholder:text-slate-400 focus:border-brand focus:ring-2 focus:ring-blue-100"
+              />
+
+              <p class="mt-2 text-xs leading-5 text-muted">
+                The root URL of the API you want to monitor.
+              </p>
+            </div>
+
+            <div>
+              <label for="http-method" class="mb-2 block text-sm font-semibold text-ink">
+                HTTP method
+              </label>
+
+              <select
+                id="http-method"
+                name="http-method"
+                class="w-full rounded-lg border border-slate-200 bg-white px-4 py-3 text-sm text-ink outline-none transition focus:border-brand focus:ring-2 focus:ring-blue-100"
+              >
+                <option selected>GET</option>
+                <option>POST</option>
+                <option>PUT</option>
+                <option>DELETE</option>
+                <option>PATCH</option>
+              </select>
+            </div>
+
+            <div class="pt-2">
+              <button type="submit" class="btn-primary w-full">
+                Start Monitoring
+              </button>
+
+              <p class="mt-3 text-center text-xs text-muted">
+                You can add more endpoints after setup.
+              </p>
+            </div>
+          </form>
+        </div>
+
+        <p class="mt-6 text-center text-xs font-medium tracking-wide text-muted">
+          SETU / Self-healing API integration
+        </p>
+      </div>
+    </section>
+  </main>
+</body>
+</html>
