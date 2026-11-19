@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Setu — UI States</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="assets/js/tailwind-config.js"></script>
+  <link rel="stylesheet" href="assets/css/components.css" />
+</head>
+<body data-page="states" class="bg-cream text-ink font-sans">
+  <div id="app-shell"></div>          <!-- sidebar + topbar injected by shell.js -->
+  
+  <main class="ml-64 pt-14 p-8 max-w-7xl mx-auto space-y-10">
+    
+    <!-- Page Header -->
+    <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div>
+        <div class="flex items-center gap-2 mb-1">
+          <span class="pill bg-slate-200 text-slate-700 font-mono text-xs">DESIGN SYSTEM / PREVIEW</span>
+        </div>
+        <h1 class="text-2xl font-bold tracking-tight text-ink">UI States</h1>
+        <p class="text-sm text-muted mt-1">Empty, loading, and error states across your API workspace.</p>
+      </div>
+      <div>
+        <a href="dashboard.html" class="btn-secondary inline-flex items-center gap-2 text-sm">
+          ← Back to Dashboard
+        </a>
+      </div>
+    </div>
+
+    <!-- 01 / EMPTY STATE -->
+    <section class="card p-8 relative overflow-hidden">
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+        <h2 class="text-xs font-mono font-bold tracking-wider text-muted uppercase">01 / Empty State</h2>
+        <span class="pill pill-warn">No data</span>
+      </div>
+
+      <div class="py-12 px-4 text-center max-w-md mx-auto">
+        <div class="w-16 h-16 bg-cream rounded-full flex items-center justify-center mx-auto mb-4 text-muted">
+          <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"></path>
+          </svg>
+        </div>
+        <h3 class="text-lg font-semibold text-ink mb-1">No endpoints yet</h3>
+        <p class="text-sm text-muted mb-6">Add your first endpoint to start tracking schema changes and latency telemetry.</p>
+        <a href="onboarding.html" class="btn-primary inline-flex items-center gap-2">
+          + Add Endpoint
+        </a>
+      </div>
+    </section>
+
+    <!-- 02 / LOADING STATE -->
+    <section class="card p-8 relative overflow-hidden">
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+        <h2 class="text-xs font-mono font-bold tracking-wider text-muted uppercase">02 / Loading State</h2>
+        <span class="pill pill-ai">In progress</span>
+      </div>
+
+      <div class="space-y-4">
+        <div class="flex items-center justify-between bg-cream/50 p-4 rounded-xl border border-slate-200">
+          <div class="flex items-center gap-3">
+            <div class="w-2.5 h-2.5 rounded-full bg-brand animate-pulse"></div>
+            <div>
+              <p class="text-sm font-semibold text-ink">Generating diff…</p>
+              <p class="text-xs text-muted">Acme Core API · production · Sample data sync</p>
+            </div>
+          </div>
+          <span class="text-xs font-mono text-muted">Live sampling</span>
+        </div>
+
+        <div class="table-base overflow-hidden rounded-xl border border-slate-200 bg-white">
+          <table class="w-full text-left border-collapse text-sm">
+            <thead>
+              <tr class="bg-cream/60 border-b border-slate-200 text-xs font-semibold text-muted font-mono">
+                <th class="p-4">ENDPOINT</th>
+                <th class="p-4">METHOD</th>
+                <th class="p-4">LAST UPDATED</th>
+                <th class="p-4">STATUS</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100">
+              <tr>
+                <td class="p-4 font-mono text-xs font-medium text-ink">/v1/checkout</td>
+                <td class="p-4"><span class="pill bg-slate-100 text-slate-800 font-mono text-xs">POST</span></td>
+                <td class="p-4 text-muted text-xs">Just now</td>
+                <td class="p-4"><span class="pill bg-blue-50 text-brand font-medium">Comparing…</span></td>
+              </tr>
+              <tr>
+                <td class="p-4 font-mono text-xs font-medium text-ink">/v1/payments/{id}</td>
+                <td class="p-4"><span class="pill bg-slate-100 text-slate-800 font-mono text-xs">GET</span></td>
+                <td class="p-4 text-muted text-xs">2 minutes ago</td>
+                <td class="p-4"><span class="pill bg-slate-100 text-slate-600">Queued</span></td>
+              </tr>
+              <tr>
+                <td class="p-4 font-mono text-xs font-medium text-ink">/v1/webhooks</td>
+                <td class="p-4"><span class="pill bg-slate-100 text-slate-800 font-mono text-xs">POST</span></td>
+                <td class="p-4 text-muted text-xs">5 minutes ago</td>
+                <td class="p-4"><span class="pill bg-slate-100 text-slate-600">Queued</span></td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 03 / ERROR STATE -->
+    <section class="card p-8 relative overflow-hidden">
+      <div class="flex items-center justify-between mb-6 pb-4 border-b border-slate-100">
+        <h2 class="text-xs font-mono font-bold tracking-wider text-muted uppercase">03 / Error State</h2>
+        <span class="pill pill-bad">Connection lost</span>
+      </div>
+
+      <div class="space-y-4">
+        <!-- Error Banner -->
+        <div class="bg-red-50 border border-red-200 rounded-xl p-4 flex items-start gap-3">
+          <div class="text-bad mt-0.5">
+            <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+            </svg>
+          </div>
+          <div class="flex-1">
+            <h4 class="text-sm font-semibold text-red-900">Lost connection to API — <a href="dashboard.html" class="underline hover:text-red-950 font-bold">Retry</a></h4>
+            <p class="text-xs text-red-700 mt-0.5">Check your connection, then retry to reconnect to Acme Core API edge proxy.</p>
+          </div>
+        </div>
+
+        <!-- Secondary Card State Error -->
+        <div class="border border-red-200 rounded-xl p-6 bg-white text-center">
+          <div class="w-12 h-12 bg-red-50 text-bad rounded-full flex items-center justify-center mx-auto mb-3">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M18.364 5.636l-12.728 12.728m0-12.728l12.728 12.728"></path>
+            </svg>
+          </div>
+          <h4 class="text-base font-semibold text-ink">Failed to load telemetry stream</h4>
+          <p class="text-sm text-muted mt-1 max-w-sm mx-auto">The gateway returned a 503 Service Unavailable response while fetching edge logs.</p>
+          <div class="mt-5 flex items-center justify-center gap-3">
+            <a href="dashboard.html" class="btn-primary text-sm">Retry Connection</a>
+            <a href="dashboard.html" class="btn-secondary text-sm">Return to Dashboard</a>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script src="assets/js/shell.js"></script>
+  <script src="assets/js/interactions.js"></script>
+</body>
+</html>
