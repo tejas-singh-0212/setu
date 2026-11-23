@@ -1,0 +1,235 @@
+generator client {
+  provider "prisma-client-js"
+}
+
+datasource db {
+  provider "postgresql"
+  url      env(DATABASE_URL)
+  // The `pgvector` extension must be enabled in your database.
+  // In Neon: run `CREATE EXTENSION IF NOT EXISTS vector;` in the SQL editor.
+  // In Supabase: run `CREATE EXTENSION IF NOT EXISTS vector;` via the SQL editor.
+}
+
+// --- Models (all three parts depend on these) ---
+
+enum MonitorType {
+  website
+  api
+}
+
+enum MonitorStatus {
+  active
+  paused
+}
+
+enum IncidentStatus {
+  open
+  diagnosing
+  recovering
+  resolved
+  failed
+}
+
+enum RecoveryActionStatus {
+  pending
+  approved
+  rejected
+  executed
+  verified
+  failed
+}
+
+enum ChangeType {
+  renamed
+  removed
+  type_changed
+}
+
+model User {
+  id            String    @id @default(uuid())
+  email         String    @unique
+  name          String?
+  avatarUrl     String?
+  provider      String    // "google" | "github"
+  providerId    String?
+  createdAt     DateTime  @default(now())
+}
+
+model Monitor {
+  id            String    @id @default(uuid())
+  userId        String    // FK to User
+  name          String
+  type          MonitorType
+  url           String
+  method        String    @default("GET")
+  intervalSec   Int
+  timeoutMs     Int
+  retries       Int
+  cacheEnabled  Boolean
+  status        MonitorStatus @default(active)
+  healthScore   Int       @default(100)
+  lastProbedAt  DateTime?
+  createdAt     DateTime  @default(now())
+
+  user          User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model Probe {
+  id            String    @id @default(uuid())
+  monitorId     String
+  at            DateTime  @default(now())
+  ok            Boolean
+  statusCode    Int?
+  latencyMs     Int
+  schemaOk      Boolean   @default(true)
+  error         String?
+  dnsOk         Boolean   @default(true)
+  sslDaysLeft   Int?
+
+  monitor       Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+}
+
+model Incident {
+  id            String    @id @default(uuid())
+  monitorId     String
+  type          IncidentType
+  severity      String
+  title         String
+  probableCause String?
+  status        IncidentStatus @default(open)
+  diagnosis     Json?
+  openedAt      DateTime  @default(now())
+  closedAt      DateTime?
+
+  monitor       Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+}
+
+model IncidentTypeDetector {
+  incidentId String @id
+  incident   Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
+
+enum IncidentType {
+  drift
+  latency
+  error
+  dependency
+}
+
+model IncidentEvent {
+  id            String    @id @default(uuid())
+  incidentId    String
+  at            DateTime  @default(now())
+  kind          String    // detected | diagnosis | proposed | approved | rejected | executed | postcheck | note
+  actor         String?   // userId or "system"
+  payload       Json?
+
+  incident      Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
+
+model RecoveryAction {
+  id            String    @id @default(uuid())
+  incidentId    String
+  kind          String    // timeout | retry | cache | mapping_rollback | transform
+  payload       Json
+  status        RecoveryActionStatus @default(pending)
+  proposedBy    String?
+  approvedBy    String?
+  executedAt    DateTime?
+  postCheckOk   Boolean?
+
+  incident      Incident @relation(fields: [incidentId], references: [id], onDelete: Cascade)
+}
+
+model DependencyCheck {
+  id            String    @id @default(uuid())
+  monitorId     String
+  at            DateTime  @default(now())
+  dnsOk         Boolean
+  sslIssuer     String?
+  sslExpiresAt  DateTime?
+  sslDaysLeft   Int
+  upstreamHosts Json?
+  rateLimited   Boolean
+
+  monitor       Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+}
+
+model Recommendation {
+  id            String    @id @default(uuid())
+  monitorId     String?
+  title         String
+  why           String
+  action        Json
+  source        String    // telemetry | dependency | rag | rule
+  status        String    @default(open) // open | applied | dismissed
+  createdAt     DateTime  @default(now())
+
+  monitor       Monitor?  @relation(fields: [monitorId], references: [id], onDelete: SetNull)
+}
+
+model SchemaVersion {
+  id            String    @id @default(uuid())
+  monitorId     String
+  version       String
+  schemaJson    Json
+  status        String    @default(expected) // expected | superseded
+  createdAt     DateTime  @default(now())
+
+  monitor       Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+}
+
+model ChangeEvent {
+  id            String    @id @default(uuid())
+  monitorId     String
+  oldSchemaId   String?   // FK to SchemaVersion (expected)
+  newSchemaId   String    // FK to SchemaVersion (detected)
+  changeType    ChangeType
+  detectedAt    DateTime  @default(now())
+  status        String    @default(open) // open | resolved
+
+  monitor       Monitor   @relation(fields: [monitorId], references: [id], onDelete: Cascade)
+}
+
+model MappingFix {
+  id            String    @id @default(uuid())
+  changeId      String
+  fixCode       String
+  proposedBy    String?
+  approvedBy    String?
+  approvedAt    DateTime?
+  status        String    @default(pending) // pending | approved | executed
+
+  change        ChangeEvent @relation(fields: [changeId], references: [id], onDelete: Cascade)
+}
+
+model AuditLog {
+  id            String    @id @default(uuid())
+  entityType    String    // "monitor" | "incident" | "recovery_action" | "setting" | "schema_version"
+  entityId      String
+  action        String
+  actor         String?   // userId or "system"
+  timestamp     DateTime  @default(now())
+  payload       Json?     // optional extra context
+
+  // Index for fast lookups by entity
+  @@ index(entityType, entityId)
+}
+
+model Setting {
+  key           String    @id
+  value         Json
+  updatedAt     DateTime  @updatedAt()
+
+  @@ unique(key)
+}
+
+model Embedding {
+  id            String    @id @default(uuid())
+  kind          String    // "knowledge" | "diagnosis" | "fix"
+  refId         String?   // incidentId, recoveryActionId, etc.
+  content       String
+  vector        Float[]   // pgvector dimension 384
+
+  @@ index(vector_ipcmem_cosine_distance(vector, $queryEmbedding))
+}
