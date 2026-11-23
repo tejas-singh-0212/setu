@@ -1,2 +1,45 @@
-.playwright-mcp
+# See https://github.com/github/ gitignore/blob/main/Node.gitignore for Node entries
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Production build output
+dist/
+build/
+
+# Environment variables (containing OAuth credentials, DB passwords, etc.)
+.env
+
+# Local database file (if any)
+*.sqlite3
+
+# Favicon (generated during development, not tracked in git)
+favicon.ico
+
+# Vite client-side cache
+.vite/
+
+# TypeScript temporary files
+*.tsbuildinfo
+*.tslock
+
+# IDE / editor directories and files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Docker (if used)
+docker-compose.yml
+.dockerignore
+
+# OAuth token caches and temp files
+token*.json
+
+PART1_CHECKLIST.md
+PART1_IMPLEMENTATION_PLAN.md
+SESSION_SUMMARY.md
+LAST_SUMMARY
+.playwright-mcp/
 part1.md
