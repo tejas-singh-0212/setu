@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-const Pill = ({ variant = 'neutral', children }) => {
+export const Pill = ({ variant = 'neutral', children }) => {
   const variants = {
     ok: 'pill-ok',
     warn: 'pill-warn',
@@ -19,5 +19,3 @@ const Pill = ({ variant = 'neutral', children }) => {
 }
 
 Pill.defaultProps = { variant: 'neutral' }
-
-export default Pill

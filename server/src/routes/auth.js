@@ -1,3 +1,4 @@
+const { query } = require('../lib/db')
 const router = require('express').Router()
 const passport = require('passport')
 const authMiddleware = require('../middleware/auth')
@@ -29,11 +30,12 @@ router.get('/github/callback',
 // Get current user (protected)
 router.get('/me', authMiddleware.requireAuth, async (req, res) => {
   try {
-    const user = await prisma.user.findUnique({
-      where: { id: req.session.userId },
-    })
-    if (!user) return res.status(401).json({ error: 'User not found' })
-    res.json({ id: user.id, email: user.email, name: user.name, avatarUrl: user.avatarUrl, provider: user.provider })
+    const result = await query(
+      'SELECT id, email, name, avatar_url AS "avatarUrl", provider FROM "User" WHERE id = $1',
+      [req.session.userId]
+    )
+    if (!result.rows.length) return res.status(401).json({ error: 'User not found' })
+    res.json(result.rows[0])
   } catch (e) {
     res.status(500).json({ error: e.message })
   }

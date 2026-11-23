@@ -230,6 +230,4 @@ model Embedding {
   refId         String?   // incidentId, recoveryActionId, etc.
   content       String
   vector        Float[]   // pgvector dimension 384
-
-  @@ index(vector_ipcmem_cosine_distance(vector, $queryEmbedding))
 }

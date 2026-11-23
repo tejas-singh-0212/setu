@@ -2,7 +2,7 @@
 
 import React from 'react'
 
-export const DataTable = ({ columns, data, onRowClick }) => {
+export const DataTable = ({ columns, data }) => {
   return (
     <table className="table-base">
       <thead>
@@ -13,17 +13,14 @@ export const DataTable = ({ columns, data, onRowClick }) => {
         </tr>
       </thead>
       <tbody>
-        {data.map((row) => {
-          const handleClick = () => onRowClick && onRowClick(row)
-          return (
-            <tr key={row.id} onClick={handleClick}>
-              {columns.map((col) => {
-                const value = col.accessor ? row[col.accessor] : row[col.key]
-                return <td key={col.key}>{value}</td>
-              })}
-            </tr>
-          )
-        })}
+        {data.map((row) => (
+          <tr key={row.id}>
+            {columns.map((col) => {
+              const value = col.render ? col.render(row) : (col.accessor ? row[col.accessor] : row[col.key])
+              return <td key={col.key}>{value}</td>
+            })}
+          </tr>
+        ))}
       </tbody>
     </table>
   )

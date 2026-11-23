@@ -2,25 +2,24 @@
 
 import { useEffect, useState } from 'react'
 import { DataTable, Skeleton, EmptyState, ErrorState } from '../components'
-import { AppLayout, RequireAuth } from '../components'
-import { useNavigate, useLocation } from 'react-router-dom'
+import { AppLayout } from '../components/AppLayout'
+import { useNavigate } from 'react-router-dom'
+import { get } from '../lib/api'
 
 export default function UIStates() {
-  const [state, setState] = useState<'empty' | 'loading' | 'error'>('empty')
+  const [state, setState] = useState<'empty' | 'loading' | 'error'>('loading')
   const [monitors, setMonitors] = useState(null)
   const navigate = useNavigate()
-  const location = useLocation()
 
-  // Check monitors API to determine state
   useEffect(() => {
     async function check() {
       try {
-        const res = await fetch('/api/monitors', { credentials: 'include' })
-        const data = await res.json()
+        const data = await get('/monitors')
         if (!data || data.length === 0) {
           setState('empty')
         } else {
-          setState('loading') // will transition after first probe
+          setMonitors(data)
+          setState('loading')
         }
       } catch (e) {
         setState('error')
@@ -28,17 +27,6 @@ export default function UIStates() {
     }
     check()
   }, [])
-
-  // Transition from loading to error if no probes after a bit
-  useEffect(() => {
-    if (state === 'loading') {
-      const timer = setTimeout(() => {
-        // If still no real probe data, show error
-        setState('error')
-      }, 3000)
-      return () => clearTimeout(timer)
-    }
-  }, [state])
 
   if (state === 'empty') {
     return (
@@ -60,7 +48,7 @@ export default function UIStates() {
       <AppLayout dataPage="states">
         <div className="min-h-screen bg-cream p-8">
           <div className="max-w-2xl mx-auto">
-            <Skeleton rows={4} />
+            <Skeleton lines={4} />
             <div className="mt-6 text-center">
               <p className="text-slate-500 text-sm">Running probes…</p>
             </div>
@@ -70,16 +58,10 @@ export default function UIStates() {
     )
   }
 
-  // error state
   return (
     <AppLayout dataPage="states">
       <div className="min-h-screen bg-cream p-8">
-        <ErrorState
-          onRetry={() => {
-            // Reload monitors state
-            setState('loading')
-          }}
-        />
+        <ErrorState onRetry={() => setState('loading')} />
       </div>
     </AppLayout>
   )

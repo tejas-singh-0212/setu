@@ -1,9 +1,28 @@
 // Probes service — uses pg pool for database operations
 
-const { Pool } = require('pg')
+const fs = require('fs')
+const path = require('path')
 const { query, execute } = require('../lib/db')
+const anomaly = require('./anomaly')
 const dns = require('dns')
 const tls = require('tls')
+
+// Load afterProbe hooks (C2 contract): hooks/afterProbe/*.js
+// ctx = { monitor, probe, pool }
+function loadAfterProbeHooks() {
+  const hooksDir = path.join(__dirname, '../hooks/afterProbe')
+  try {
+    return fs
+      .readdirSync(hooksDir)
+      .filter((f) => f.endsWith('.js'))
+      .map((f) => require(path.join(hooksDir, f)))
+  } catch (e) {
+    console.error('Failed to load afterProbe hooks:', e)
+    return []
+  }
+}
+
+const afterProbeHooks = loadAfterProbeHooks()
 
 async function runProbe(monitor) {
   const url = new URL(monitor.url)
@@ -29,9 +48,8 @@ async function runProbe(monitor) {
 
   // HTTP/HTTPS request
   try {
-    const fetch = require('node-fetch').default
     const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), monitor.timeoutMs || 5000)
+    const timeoutId = setTimeout(() => controller.abort(), monitor.timeout_ms || 5000)
 
     const response = await fetch(monitor.url, {
       method: monitor.method || 'GET',
@@ -47,25 +65,33 @@ async function runProbe(monitor) {
     // SSL days left (for HTTPS)
     if (protocol === 'https') {
       try {
-        const session = tls.connect({
-          host: hostname,
-          port: 443,
-          rejectUnauthorized: false,
+        await new Promise((resolve, reject) => {
+          const session = tls.connect({
+            host: hostname,
+            port: 443,
+            rejectUnauthorized: false,
+          })
+          session.on('secureConnect', () => {
+            const cert = session.getPeerCertificate()
+            if (cert && cert.valid_to) {
+              const expires = new Date(cert.valid_to)
+              const now = new Date()
+              sslDaysLeft = Math.ceil((expires - now) / (1000 * 60 * 60 * 24))
+            }
+            session.destroy()
+            resolve()
+          })
+          session.on('error', () => {
+            sslDaysLeft = 0
+            session.destroy()
+            resolve()
+          })
+          session.setTimeout(3000, () => {
+            sslDaysLeft = 0
+            session.destroy()
+            resolve()
+          })
         })
-        session.on('secureConnect', () => {
-          const cert = session.getPeerCertificate()
-          if (cert && cert.valid_to) {
-            const expires = new Date(cert.valid_to)
-            const now = new Date()
-            sslDaysLeft = Math.ceil((expires - now) / (1000 * 60 * 60 * 24))
-          }
-          session.destroy()
-        })
-        session.on('error', () => {
-          sslDaysLeft = 0
-          session.destroy()
-        })
-        await new Promise((resolve) => session.connect({ timeout: 3000 }, resolve))
       } catch (e) {
         sslDaysLeft = 0
       }
@@ -80,8 +106,7 @@ async function runProbe(monitor) {
   // Create probe record
   const result = await execute(
     `INSERT INTO probe (monitor_id, ok, status_code, latency_ms, schema_ok, error, dns_ok, ssl_days_left)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8
-     RETURNING *`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8) RETURNING *`,
     [
       monitor.id,
       ok,
@@ -114,13 +139,31 @@ async function runProbe(monitor) {
     [newHealth, monitor.id]
   )
 
-  return result.rows[0]
+  const probe = result.rows[0]
+
+  // Run afterProbe hooks (C2 contract)
+  const ctx = { monitor, probe, pool }
+  for (const hook of afterProbeHooks) {
+    try {
+      await hook.run(ctx)
+    } catch (e) {
+      console.error(`After-probe hook "${hook.name}" failed:`, e)
+    }
+  }
+
+  // Run anomaly detection
+  try {
+    await anomaly.evaluate(probe)
+  } catch (e) {
+    console.error(`Anomaly evaluation failed for monitor ${monitor.id}:`, e)
+  }
+
+  return probe
 }
 
 async function getHistory(monitorId, range = '24h') {
   const now = new Date()
   const from = new Date()
-
   from.setHours(now.getHours() - 24)
 
   const result = await query(

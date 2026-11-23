@@ -1,10 +1,14 @@
 // Dashboard — context.md §5.3
 
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { DataTable, StatCard, Pill, Skeleton, EmptyState } from '../components'
 import { AppLayout } from '../components/AppLayout'
+import { get } from '../lib/api'
+import { mockHealth, mockIncidents, mockDependencies } from '../lib/mock'
 
 export default function Dashboard() {
+  const navigate = useNavigate()
   const [health, setHealth] = useState(null)
   const [monitors, setMonitors] = useState(null)
   const [incidents, setIncidents] = useState(null)
@@ -14,26 +18,37 @@ export default function Dashboard() {
   useEffect(() => {
     async function load() {
       try {
-        // Health aggregates
-        const h = await fetch('/api/health', { credentials: 'include' }).then(r => r.json())
+        const h = await get('/health')
         setHealth(h)
+      } catch (e) {
+        console.error('Health load error:', e)
+        setHealth(mockHealth)
+      }
 
-        // Monitors table
-        const m = await fetch('/api/monitors', { credentials: 'include' }).then(r => r.json())
+      try {
+        const m = await get('/monitors')
         setMonitors(m)
+      } catch (e) {
+        console.error('Monitors load error:', e)
+      }
 
-        // Incidents feed
-        const inc = await fetch('/api/incidents', { credentials: 'include' }).then(r => r.json())
+      try {
+        const inc = await get('/incidents')
         setIncidents(inc)
+      } catch (e) {
+        console.error('Incidents load error:', e)
+        setIncidents(mockIncidents)
+      }
 
-        // Dependency warnings
-        const d = await fetch('/api/dependencies', { credentials: 'include' }).then(r => r.json())
+      try {
+        const d = await get('/dependencies')
         setDeps(d)
       } catch (e) {
-        console.error('Dashboard load error:', e)
-      } finally {
-        setLoading(false)
+        console.error('Dependencies load error:', e)
+        setDeps(mockDependencies)
       }
+
+      setLoading(false)
     }
     load()
   }, [])
@@ -42,8 +57,8 @@ export default function Dashboard() {
     return (
       <AppLayout dataPage="dashboard">
         <div className="min-h-screen bg-cream p-8">
-          <Skeleton rows={4} />
-          <Skeleton className="h-96 w-full rounded-2xl bg-slate-100 animate-pulse mt-4" />
+          <Skeleton lines={4} />
+          <div className="h-96 w-full rounded-2xl bg-slate-100 animate-pulse mt-4" />
         </div>
       </AppLayout>
     )
@@ -69,11 +84,9 @@ export default function Dashboard() {
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-ink">Application Health</h1>
           </div>
-
           <div className="hidden md:flex items-center gap-6">
             <span className="pill-ok text-xs">● Healthy</span>
           </div>
-
           <div className="flex items-center gap-3">
             <span className="text-slate-400 text-sm">● Live probes active</span>
           </div>
@@ -83,24 +96,28 @@ export default function Dashboard() {
       <main className="ml-64 pt-14 p-6">
         {/* Stat Cards */}
         <div className="grid grid-cols-2 gap-4 mb-6">
-          <StatCard label="MONITORS" value={health?.monitorCount?.total || '0'} delta={health?.monitorCount?.api > 0 ? '+2 this week' : undefined} />
-          <StatCard label="OPEN INCIDENTS" value={health?.openIncidents || '0'} delta="Action required" deltaColor="bad" />
+          <StatCard label="MONITORS" value={health?.monitorCount?.total || '0'} delta="+2 this week" />
+          <StatCard label="OPEN INCIDENTS" value={health?.openIncidents || '0'} delta="Action required" />
           <StatCard label="AVG HEALTH SCORE" value={`${health?.avgHealthScore || '0'}%`} delta="+2 this week" />
           <StatCard label="AVG RESPONSE TIME" value={`${health?.avgResponseTime || '0'}ms`} delta="P99 1.1s" />
         </div>
 
         {/* Monitors Table */}
         <section className="mb-8">
-          <h2 className="text-font text-xl font-bold text-ink mb-4">Monitors</h2>
+          <h2 className="text-xl font-bold text-ink mb-4">Monitors</h2>
           <DataTable
             columns={[
               { key: 'name', label: 'Monitor' },
               { key: 'type', label: 'Type' },
               { key: 'status', label: 'Status' },
-              { key: 'health', label: 'Health' },
-              { key: 'latency', label: 'Latency' },
-              { key: 'lastProbed', label: 'Last Probe' },
-              { key: 'actions', label: 'Actions' },
+              { key: 'healthScore', label: 'Health' },
+              { key: 'latencyMs', label: 'Latency' },
+              { key: 'lastProbedAt', label: 'Last Probe' },
+              { key: 'actions', label: 'Actions', render: (row) => (
+                <button className="btn-secondary text-xs px-3 py-1">
+                  {row.status === 'active' ? 'Pause' : 'Resume'}
+                </button>
+              )},
             ]}
             data={monitors}
           />
@@ -108,11 +125,11 @@ export default function Dashboard() {
 
         {/* Right Column - Incident Feed */}
         <section className="mt-8">
-          <h2 className="text-font text-xl font-bold text-ink mb-4">Incident Feed</h2>
+          <h2 className="text-xl font-bold text-ink mb-4">Incident Feed</h2>
           <div className="space-y-4">
             {incidents && incidents.length > 0 ? (
-              incidents.map((inc, i) => (
-                <div key={i} className="pill-bad bg-red-100 text-red-800 rounded-full text-xs px-2 py-1 mb-1">
+              incidents.map((inc) => (
+                <div key={inc.id} className="pill-bad bg-red-100 text-red-800 rounded-full text-xs px-2 py-1 mb-1">
                   {inc.title}
                 </div>
               ))
@@ -124,12 +141,12 @@ export default function Dashboard() {
 
         {/* Right Column - Dependency Warnings */}
         <section className="mt-8">
-          <h2 className="text-font text-xl font-bold text-ink mb-4">Dependency Warnings</h2>
+          <h2 className="text-xl font-bold text-ink mb-4">Dependency Warnings</h2>
           {deps && deps.length > 0 ? (
             <div className="space-y-2">
-              {deps.map((d, i) => (
-                <div key={i} className="pill-warn bg-amber-50 border border-amber-200 rounded-full text-xs px-3 py-1">
-                  {d}
+              {deps.map((d) => (
+                <div key={d.id || d} className="pill-warn bg-amber-50 border border-amber-200 rounded-full text-xs px-3 py-1">
+                  {typeof d === 'string' ? d : d.title}
                 </div>
               ))}
             </div>

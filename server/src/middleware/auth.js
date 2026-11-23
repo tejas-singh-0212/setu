@@ -31,13 +31,13 @@ async function findOrCreateUser(profile, done) {
       return done(null, user)
     } else {
       // Create new user
-      const { rows: result } = await pool.query(
+      const { rows } = await pool.query(
         `INSERT INTO "User" (id, email, name, avatar_url, provider, provider_id, created_at)
          VALUES ($1, $2, $3, $4, $5, $6, NOW())
          RETURNING *`,
         [uuidv4(), email, name, avatarUrl, provider, providerId]
       )
-      return done(null, result.rows[0])
+      return done(null, rows[0])
     }
   } catch (err) {
     done(err)

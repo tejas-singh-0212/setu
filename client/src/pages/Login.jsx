@@ -1,103 +1,75 @@
 // Login — context.md §5.1
 
 import { useEffect, useState } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import { AppLayout } from '../components/AppLayout'
 import { Pill } from '../components/Pill'
 
 export default function Login() {
-  const [from] = useLocation().state || {}
   const navigate = useNavigate()
-  const [showLogin, setShowLogin] = useState(true)
+  const [checking, setChecking] = useState(true)
 
   useEffect(() => {
     ;(async () => {
       try {
         const res = await fetch('/api/auth/me', { credentials: 'include' })
         if (res.ok) {
-          const user = await res.json()
-          // If already logged in, redirect based on provider
-          navigate(user.provider === 'google' ? '/dashboard' : '/dashboard', { replace: true })
+          navigate('/dashboard', { replace: true })
         } else {
-          // No session — show login UI
-          setShowLogin(true)
+          setChecking(false)
         }
       } catch (e) {
-        // No session yet — show login UI
-        setShowLogin(true)
+        setChecking(false)
       }
     })()
   }, [navigate])
 
-  // Always show the login UI
-  if (showLogin) {
+  if (checking) {
     return (
       <AppLayout dataPage="login">
         <div className="min-h-screen flex items-center justify-center p-6">
           <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-md text-center">
-            <h1 className="text-3xl font-bold text-ink mb-2">Welcome to Setu</h1>
-            <p className="text-slate-500 mb-8">Reliable systems. Automated maintenance.</p>
-            <button
-              className="btn-primary w-full px-8 py-3 rounded-lg text-lg font-medium transition-colors"
-              onClick={() => navigate('/api/auth/google', { replace: true })}
-            >
-              Continue with Google
-              <svg className="inline-block mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M22.54 12.25c.03-.36-.06-.71-.3-1.04-.33-.36-1.08-.3-1.42.03-.36.33-.77.55-1.32.63-.65.13-1.42-.08-2.04-.36-.66-.28-1.32-.54-1.88-.54-1.1 0-1.69.78-1.74 1.23-.24.96.08 1.76.5 2.09.33.25.7.3 1.19.3.42-.07.66-.22.86-.4.2-.18.36-.37.48-.54.18-.24.27-.52.27-.87 0-.65-.26-1.34-.7-1.98-.46-.66-1.12-.6-1.93-.6-.9 0-1.53.33-1.94.78-.42.46-.66 1.18-.6 1.99 0 .93.3 1.64.7 2.18.34.36.68.54 1.13.54.52 0 .99-.18 1.38-.55.36-.33.53-.86.53-1.38 0-.65-.33-1.2-.8-1.64-.44-.38-1.06-.6-1.82-.6-1.05 0-1.77.45-2.29 1.28-.26.5-1.13 1.04-2.3 1.58-.28.12-.46.2-.57.2-.15 0-.27-.06-.35-.15-.1-.13-.13-.35-.06-.57.08-.25.3- .46.55-.62.15-.11.2-.26.2-.4.02-.17-.13-.3-.2-.4-.2-.12-.06-.22-.06-.32-.05-.13.08-.23.18-.3.3-.08.13-.13.28-.13.45 0 .23.06.43.13.58.1.16.16.26.22.33.07.08.07.18.07.25 0 .12.07.23.07.32 0 .11.05.22.05.35v40.75c0 .19.05.36.13.53.08.19.2.47.28.68.1.27.08.41.08.55v-.5c0-.11.02-.22.02-.35-.02-.28-.1- .57-.24-.78-.1-.23-.23-.38-.43-.43-.23-.08-.36-.08-.48 0l-.26.31c-.13.16-.32.3-.51.3-.24 0-.46-.08-.6-.2-.23-.18-.38-.36-.48-.43-.1-.15-.18-.35-.08-.52.08-.14.25-.23.43-.23.25 0 .43.1.58.28.22.22.36.5.33.87.07.33.07.72 0 1.03-.07.28-.27.48-.32.57-.07.1-.15.17-.23.17-.1 0-.2-.08-.28-.23l-.16-.63c-.05-.2-.03-.36.03-.46.05-.08.1-.12.13-.12.05-.01.1.01.13.05.04.04.05.05.1.05.1 0 .2-.02.28-.08.14-.08.26-.2.35-.3.1-.08.16-.2.2-.3.05-.08.08-.14.08-.23l-.13-.55c-.08-.43-.18-.7-.25-.97-.08-.28-.13-.55-.18-.82l-.16-.63c-.03-.36-.13-.63-.23-.85-.13-.26-.26-.46-.3-.63-.05-.13-.1-.23-.13-.33 0-.11.03-.18.08-.23l.16-.63c.05-.36.1-.63.18-.85.08-.23.13-.43.18-.58.05-.11.08-.18.13-.3.06-.11.08-.18.13-.23.05-.06.08-.11.13-.15.05-.05.08-.11.13-.15.03-.06.05-.11.05-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.06-.05.06-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.05.05-.1 0-.18l-.1-.34c-.03-.16-.05-.28-.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1-.05-.18 END V1 COPY ✅</svg>
-            </button>
-            <button
-              className="btn-secondary w-full px-8 py-3 rounded-lg text-lg font-medium mt-4 transition-colors"
-              onClick={() => navigate('/api/auth/github', { replace: true })}
-            >
-              Continue with GitHub
-              <svg className="inline-block mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-                <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 7.367 7.174 11.45h4.117c-2.37 7.584-6.133 11.388-11.137 11.45.438.05.612.16.773.31.07.07.1.15.08.2.05.07.1.15.08.3 0 .528-.177.742-.437.243-.293.408-.669.453-.993.086-.511.015-.918.018-1.333 3.057.366. 5.535 1.182 5.535 1.182. 607.123.3 1.028.7 1.64.8 2.122.091.459.16 1.028.16 1.37 0 .35-.038.673-.088.673-.136 0-.286-.05- .526-.05-.25 0-.5 0-.75.05-.294.163-.461.391-.514.567-.16.324-.35 1.026.077 2.347.58 1.761. 1.842. 2.542 2.312. 1.923. 2.542 2.722. 1.532. 1.397 2.278 2.54 2.278 2.946 0 1.062-.015 1.846-.017 2.532.08.86 2.821 5.135 5.339 7.48 2.24 1.885 3.305 4.19 3.518 6.304.41 2.807-.21 5.394-.8 6.416-1.005.144-2.357.76-3.317 1.733-.61.508-.899.86-1.131.936-.4.138-.866.173-1.311.136-.617-.03-1.177-.13-1.598-.33-.568-.259-1.02-.61-1.18-1.029-.168-.421-.168-.866-.008-1.31  .308-.688.56-1.218.778-1.69.34-.542.438-1.018.52-1.394.172-.168.23-.28.373-.28.53 0 .53.215.82.56.6.32 1.016.6 1.28.72.41.18.68.32.8 4.012.16 4.52.152 6.16.2 3.778.07 7.09.02 8.323.02 1.19 0 2.164-.02 3.03-.06.987.03 1.834.06 2.588.06 1.123 0 2.128-.03 3.003-.06 1.308-.04 2.49-.12 3.51-.27. 997.058-.07 1.478-.13 2.045-.24.585-.26.93-.56.93-.95 0-.41-.1-.74-.13-.95-.05-.3 0-.58-.05-.78-.15-.24-.13-.38-.25-.48-.43-.15-.28-.18-.58-.23-.78-.08-.23-.23-.43-.3-.6-.08-.15-.15-.26-.23-.35l-.13-.55c-.08-.43-.18-.73-.25-.97-.08-.28-.13-.55-.18-.82l-.16-.63c-.03-.36-.13-.63-.23-.85-.13-.26-.26-.46-.3-.63-.05-.13-.1-.23-.13-.33 0-.11.03-.18.08-.23l.16-.63c.05-.36.1-.63.18-.85.08-.23.13-.43.18-.58.05-.11.08-.18.13-.3.06-.11.08-.18.13-.23.05-.06.08-.11.13-.15.05-.05.08-.11.13-.15.03-.06.05-.11.05-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.06-.05.06-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.05.05-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18l-.1-.34c-.03-.16-.05-.28-.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18END V1 COPY ✅</svg>
-            </button>
-            <footer className="mt-8 text-sm text-slate-500">
-              Free during the demo period — no credit card required.
-            </footer>
+            <div className="flex items-center justify-center gap-2">
+              <span className="h-5 w-5 border-2 border-brand rounded-full border-t-transparent rounded-r-full animate-spin"></span>
+              <span className="text-slate-500 text-sm">Signing you in…</span>
+            </div>
           </div>
         </div>
       </AppLayout>
     )
   }
 
-  // Auto-start OAuth if no session
-  useEffect(() => {
-    ;(async () => {
-      try {
-        const res = await fetch('/api/auth/me', { credentials: 'include' })
-        if (res.ok) {
-          const user = await res.json()
-          navigate(user.provider === 'google' ? '/dashboard' : '/dashboard', { replace: true })
-        }
-      } catch (e) {
-        // No session yet — do nothing, let the session flow handle it
-      }
-    })()
-  }, [navigate])
-
-  // Always show the login UI
-  return showLogin ? (
+  return (
     <AppLayout dataPage="login">
       <div className="min-h-screen flex items-center justify-center p-6">
         <div className="bg-white rounded-2xl p-8 max-w-md w-full shadow-md text-center">
+          <div className="flex items-center justify-center gap-2 mb-6">
+            <span className="text-3xl font-bold text-brand">Setu</span>
+          </div>
           <h1 className="text-3xl font-bold text-ink mb-2">Welcome to Setu</h1>
           <p className="text-slate-500 mb-8">Reliable systems. Automated maintenance.</p>
           <button
-            className="btn-primary w-full px-8 py-3 rounded-lg text-lg font-medium transition-colors"
-            onClick={() => navigate('/api/auth/google', { replace: true })}
+            className="btn-primary w-full px-8 py-3 rounded-lg text-lg font-medium transition-colors flex items-center justify-center gap-2 mx-auto"
+            onClick={() => {
+              window.location.href = '/api/auth/google'
+            }}
           >
             Continue with Google
-            <svg className="inline-block mr-2 h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M22.54 12.25c.03-.36-.06-.71-.3-1.04-.33-.36-1.08-.3-1.42.03-.36.33-.77.55-1.32.63-.65.13-1.42-.08-2.04-.36-.66-.28-1.32-.54-1.88-.54-1.1 0-1.69.78-1.74 1.23-.24.96.08 1.76.5 2.09.33.25.7.3 1.19.3.42-.07.66-.22.86-.4.2-.18.36-.37.48-.54.18-.24.27-.52.27-.87 0-.65-.26-1.34-.7-1.98-.46-.66-1.12-.6-1.93-.6-.9 0-1.53.33-1.94.78-.42.46-.66 1.18-.6 1.99 0 .93.3 1.64.7 2.18.34.36.68.54 1.13.54.52 0 .99-.18 1.38-.55.36-.33.53-.86.53-1.38 0-.65-.33-1.2-.8-1.64-.44-.38-1.06-.6-1.82-.6-1.05 0-1.77.45-2.29 1.28-.26.5-1.13 1.04-2.3 1.58-.28.12-.46.2-.57.2-.15 0-.27-.06-.35-.15-.1-.13-.13-.35-.06-.57.08-.25.3- .46.55-.62.15-.11.2-.26.2-.4.02-.17-.13-.3-.2-.4-.2-.12-.06-.22-.06-.32-.05-.13.08-.23.18-.3.3-.08.13-.13.28-.13.45 0 .23.06.43.13.58.1.16.16.26.22.33.07.08.07.18.07.25 0 .12.07.23.07.32 0 .11.05.22.05.35v40.75c0 .19.05.36.13.53.08.19.2.47.28.68.1.27.08.41.08.55v-.5c0-.11.02-.22.02-.35-.02-.28-.1- .57-.24-.78-.1-.23-.23-.38-.43-.43-.23-.08-.36-.08-.48 0l-.26.31c-.13.16-.32.3-.51.3-.24 0-.46-.08-.6-.2-.23-.18-.38-.36-.48-.43-.1-.15-.18-.35-.08-.52.08-.14.25-.23.43-.23.25 0 .43.1.58.28.22.22.36.5.33.87.07.33.07.72 0 1.03-.07.28-.27.48-.32.57-.07.1-.15.17-.23.17-.1 0-.2-.08-.28-.23l-.16-.63c-.05-.2-.03-.36.03-.46.05-.08.1-.12.13-.12.05-.01.1.01.13.05.04.04.05.05.1.05.1 0 .2-.02.28-.08.14-.08.26-.2.35-.3.1-.08.16-.2.2-.3.05-.08.08-.14.08-.23l-.13-.55c-.08-.43-.18-.7-.25-.97-.08-.28-.13-.55-.18-.82l-.16-.63c-.03-.36-.13-.63-.23-.85-.13-.26-.26-.46-.3-.63-.05-.13-.1-.23-.13-.33 0-.11.03-.18.08-.23l.16-.63c.05-.36.1-.63.18-.85.08-.23.13-.43.18-.58.05-.11.08-.18.13-.3.06-.11.08-.18.13-.23.05-.06.08-.11.13-.15.05-.05.08-.11.13-.15.03-.06.05-.11.05-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.06-.05.06-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18l-.1-.34c-.03-.16-.05-.28-.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.06.05-.1 0-.18l.1-.34c.03-.16.05-.28.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.05.05-.1 0-.18l-.1-.34c-.03-.16-.05-.28-.05-.35 0-.13.03-.23.08-.33.06-.11.1-.17.2-.23.05-.05.05-.1 0-.18 END V1 COPY ✅</svg>
-            </button>
-            <footer className="mt-8 text-sm text-slate-500">
-              Free during the demo period — no credit card required.
-            </footer>
-          </div>
+          </button>
+          <button
+            className="btn-secondary w-full px-8 py-3 rounded-lg text-lg font-medium transition-colors flex items-center justify-center gap-2 mx-auto mt-4"
+            onClick={() => {
+              window.location.href = '/api/auth/github'
+            }}
+          >
+            Continue with GitHub
+          </button>
+          <footer className="mt-8 text-sm text-slate-500">
+            <p>Free during the demo period — no credit card required.</p>
+            <p className="mt-1 text-xs">By signing in you agree to the terms.</p>
+          </footer>
         </div>
-      </AppLayout>
-    )
-  ) : null
+      </div>
+    </AppLayout>
+  )
 }
