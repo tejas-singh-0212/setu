@@ -1,8 +1,5 @@
-// Ported from v1 components.css — reusable classes only
-
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* Ported from v1 components.css — reusable classes only */
+/* Custom component classes using Tailwind @apply (processed via postcss) */
 
 /* ======================
    Buttons

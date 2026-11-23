@@ -1,6 +1,7 @@
 const router = require('express').Router()
 const { requireAuth } = require('../middleware/auth')
 const monitorSvc = require('../services/monitors')
+const probeSvc = require('../services/probes')
 
 // GET /api/monitors — list for authenticated user
 router.get('/', requireAuth, async (req, res, next) => {
@@ -39,7 +40,9 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
 // POST /api/monitors/:id/probe — run one probe now
 router.post('/:id/probe', requireAuth, async (req, res, next) => {
   try {
-    const probe = await probeSvc.runProbe(req.monitor)
+    const monitor = await monitorSvc.getById(req.params.id)
+    if (!monitor) return res.status(404).json({ error: 'Monitor not found' })
+    const probe = await probeSvc.runProbe(monitor)
     res.json(probe)
   } catch (e) { next(e) }
 })

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
+import { Skeleton } from './Skeleton'
 
 export const RequireAuth = ({ children }) => {
   const navigate = useNavigate()
@@ -23,6 +24,6 @@ export const RequireAuth = ({ children }) => {
     })()
   }, [navigate, location])
 
-  if (!authChecked) return <div className="skeleton rows={3}" />
+  if (!authChecked) return <Skeleton lines={3} />
   return children
 }

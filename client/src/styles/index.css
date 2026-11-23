@@ -1,6 +1,7 @@
-// Inter font import + Tailwind directives
+/* Inter font import + Tailwind directives */
 
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import './components.css';
 
 @tailwind base;
 @tailwind components;
@@ -9,4 +10,8 @@
 /* Prevent dark mode (v1 stay) */
 html {
   color-scheme: light;
+}
+
+body {
+  @apply bg-cream text-ink font-sans;
 }

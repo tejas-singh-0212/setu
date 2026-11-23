@@ -1,9 +1,10 @@
 // Monitors — context.md §5.4
 
 import { useEffect, useState } from 'react'
-import { DataTable, StatCard, Pill } from '../components'
+import { DataTable, Skeleton } from '../components'
 import { AppLayout } from '../components/AppLayout'
 import { useNavigate } from 'react-router-dom'
+import { get } from '../lib/api'
 
 export default function Monitors() {
   const navigate = useNavigate()
@@ -13,10 +14,11 @@ export default function Monitors() {
   useEffect(() => {
     async function load() {
       try {
-        const m = await fetch('/api/monitors', { credentials: 'include' }).then(r => r.json())
+        const m = await get('/monitors')
         setMonitors(m)
       } catch (e) {
         console.error('Monitors load error:', e)
+        setMonitors([])
       } finally {
         setLoading(false)
       }
@@ -28,7 +30,7 @@ export default function Monitors() {
     return (
       <AppLayout dataPage="monitors">
         <div className="min-h-screen bg-cream p-8">
-          <Skeleton rows={4} />
+          <Skeleton lines={4} />
         </div>
       </AppLayout>
     )
@@ -40,8 +42,8 @@ export default function Monitors() {
         <div className="max-w-7xl mx-auto px-6 h-14 items-center justify-between flex">
           <div className="flex items-center gap-3">
             <h1 className="text-2xl font-bold text-ink">Monitors</h1>
+            <p className="text-slate-500 text-sm">Registered websites & REST APIs</p>
           </div>
-
           <div>
             <button
               className="btn-secondary text-sm px-4 py-2 rounded-lg"
@@ -53,23 +55,31 @@ export default function Monitors() {
         </div>
       </header>
 
-      <main className="ml-64 pt-6 p-6">
+      <main className="ml-64 pt-14 p-6">
         <DataTable
           columns={[
-            { key: 'name', label: 'Monitor' },
-            { key: 'type', label: 'Type' },
+            { key: 'name', label: 'NAME' },
+            { key: 'type', label: 'TYPE' },
             { key: 'url', label: 'URL' },
-            { key: 'interval', label: 'Interval' },
-            { key: 'status', label: 'Status' },
-            { key: 'health', label: 'Health' },
-            { key: 'actions', label: 'Actions' },
+            { key: 'intervalSec', label: 'INTERVAL' },
+            { key: 'status', label: 'STATUS' },
+            { key: 'healthScore', label: 'HEALTH' },
+            {
+              key: 'actions',
+              label: 'ACTIONS',
+              render: (row) => (
+                <button className="btn-secondary text-xs px-3 py-1" onClick={() => navigate(`/monitors/${row.id}`)}>
+                  Edit
+                </button>
+              ),
+            },
           ]}
           data={monitors}
         />
 
         <footer className="mt-6 text-right">
           <p className="text-slate-500">
-            4 of 4 monitors · all probing active
+            {monitors.length} of {monitors.length} monitors · all probing active
           </p>
         </footer>
       </main>

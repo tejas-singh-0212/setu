@@ -26,8 +26,7 @@ async function create(userId, data) {
 
   const result = await execute(
     `INSERT INTO monitor (user_id, name, type, url, method, interval_sec, timeout_ms, retries, cache_enabled, status, health_score)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11
-     RETURNING *`,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11) RETURNING *`,
     [
       userId,
       data.name,

@@ -164,6 +164,13 @@ CREATE TABLE IF NOT EXISTS Embedding (
   vector FLOAT[384]
 );
 
+-- Settings table
+CREATE TABLE IF NOT EXISTS Setting (
+  key VARCHAR(100) PRIMARY KEY,
+  value JSONB NOT NULL,
+  updated_at TIMESTAMP DEFAULT NOW()
+);
+
 -- Default settings
 INSERT INTO Setting (key, value) VALUES 
   ('latencyThresholdMs', '1000'::jsonb),
@@ -211,9 +218,9 @@ INSERT INTO Incident (id, monitor_id, type, severity, title, probable_cause, sta
 INSERT INTO IncidentEvent (id, incident_id, kind, actor, payload) VALUES
   ('00000000-0000-0000-0000-000000000010', '00000000-0000-0000-0000-000000000006', 'detected', 'system', '{"source": "probe"}'::jsonb),
   ('00000000-0000-0000-0000-000000000011', '00000000-0000-0000-0000-000000000006', 'diagnosis', 'system', '{"rules": true}'::jsonb),
-  ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000003', 'detected', 'system', '{"source": "probe"}'::jsonb),
-  ('00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000003', 'diagnosis', 'system', '{"rules": true}'::jsonb),
-  ('00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000005', 'detected', 'system', '{"source": "probe"}'::jsonb),
+  ('00000000-0000-0000-0000-000000000012', '00000000-0000-0000-0000-000000000007', 'detected', 'system', '{"source": "probe"}'::jsonb),
+  ('00000000-0000-0000-0000-000000000013', '00000000-0000-0000-0000-000000000007', 'diagnosis', 'system', '{"rules": true}'::jsonb),
+  ('00000000-0000-0000-0000-000000000014', '00000000-0000-0000-0000-000000000008', 'detected', 'system', '{"source": "probe"}'::jsonb),
   ('00000000-0000-0000-0000-000000000015', '00000000-0000-0000-0000-000000000009', 'detected', 'system', '{"source": "probe"}'::jsonb),
   ('00000000-0000-0000-0000-000000000016', '00000000-0000-0000-0000-000000000009', 'postcheck', 'system', '{"passed": true}'::jsonb);
 
@@ -238,6 +245,19 @@ INSERT INTO Embedding (id, kind, ref_id, content, vector) VALUES
   ('00000000-0000-0000-0000-000000000027', 'knowledge', NULL, 'Dependency check SSL expiry rules', '[]'::float[]),
   ('00000000-0000-0000-0000-000000000028', 'knowledge', NULL, 'Recovery action guidelines', '[]'::float[]),
   ('00000000-0000-0000-0000-000000000029', 'knowledge', NULL, 'Incident diagnosis pattern matching', '[]'::float[]);
+
+-- SchemaVersion pair for REST Countries API (v1.1 expected / v1.2 detected)
+INSERT INTO SchemaVersion (id, monitor_id, version, schema_json, status) VALUES
+  ('00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000002', 'v1.1', '{"fields": ["name", "capital", "currencies", "region", "population", "area", "flag"]}'::jsonb, 'expected'),
+  ('00000000-0000-0000-0000-000000000032', '00000000-0000-0000-0000-000000000002', 'v1.2', '{"fields": ["name", "capital_city", "currencies", "region", "population", "area"]}'::jsonb, 'superseded');
+
+-- ChangeEvent linking the two schema versions
+INSERT INTO ChangeEvent (id, monitor_id, old_schema_id, new_schema_id, change_type, detected_at, status) VALUES
+  ('00000000-0000-0000-0000-000000000033', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000031', '00000000-0000-0000-0000-000000000032', 'renamed', NOW(), 'open');
+
+-- One pending MappingFix for the capital→capital_city rename + population type coercion
+INSERT INTO MappingFix (id, change_id, fix_code, proposed_by, approved_by, approved_at, status) VALUES
+  ('00000000-0000-0000-0000-000000000034', '00000000-0000-0000-0000-000000000033', 'remap capital → capital_city; coerce population number→string', 'system', NULL, NULL, 'pending');
 
 -- Audit log entry
 INSERT INTO AuditLog (id, entity_type, entity_id, action, actor, payload) VALUES
