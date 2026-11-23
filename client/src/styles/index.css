@@ -1,0 +1,12 @@
+// Inter font import + Tailwind directives
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Prevent dark mode (v1 stay) */
+html {
+  color-scheme: light;
+}
