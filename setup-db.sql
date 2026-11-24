@@ -197,9 +197,13 @@ INSERT INTO Probe (monitor_id, ok, status_code, latency_ms, schema_ok, error, dn
 SELECT '00000000-0000-0000-0000-000000000002'::uuid, true, 200, floor(random()*2000)::int, true, NULL, true, floor(random()*90)+30
 FROM generate_series(1, 100)
 UNION ALL
-SELECT '00000000-0000-0000-0000-000000000003'::uuid, floor(random()*4 < 1)::bool, floor(random()*5) * 200 + 200, floor(random()*3000)::int, true, 
-  CASE WHEN floor(random()*4) = 0 THEN 'Request failed' ELSE NULL END, true, floor(random()*90)+30
+-- ok and error come from ONE random draw per row, so a failed probe always
+-- carries an error message and a 5xx status instead of contradictory values.
+SELECT '00000000-0000-0000-0000-000000000003'::uuid, rnd.r >= 0.25,
+  CASE WHEN rnd.r >= 0.25 THEN 200 ELSE 503 END, floor(random()*3000)::int, true,
+  CASE WHEN rnd.r >= 0.25 THEN NULL ELSE 'Request failed' END, true, floor(random()*90)+30
 FROM generate_series(1, 100)
+CROSS JOIN LATERAL (SELECT random() AS r) rnd
 UNION ALL
 SELECT '00000000-0000-0000-0000-000000000004'::uuid, true, 200, floor(random()*500)::int, true, NULL, true, floor(random()*90)+30
 FROM generate_series(1, 100)
@@ -208,10 +212,11 @@ SELECT '00000000-0000-0000-0000-000000000005'::uuid, true, 200, floor(random()*5
 FROM generate_series(1, 100);
 
 -- 4 Incidents
-INSERT INTO Incident (id, monitor_id, type, severity, title, probable_cause, status, opened_at) VALUES
-  ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000002', 'drift', 'high', 'Schema drift detected on REST Countries API', 'Upstream renamed capital field and removed flag', 'open', NOW()),
-  ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000003', 'latency', 'medium', 'High latency on JSONPlaceholder', '3 consecutive calls >1000ms', 'recovering', NOW()),
-  ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000005', 'dependency', 'low', 'SSL cert issue on Wikipedia', 'SSL cert expires in 12 days', 'open', NOW()),
+-- closed_at is only meaningful for resolved incidents; the other rows stay NULL.
+INSERT INTO Incident (id, monitor_id, type, severity, title, probable_cause, status, opened_at, closed_at) VALUES
+  ('00000000-0000-0000-0000-000000000006', '00000000-0000-0000-0000-000000000002', 'drift', 'high', 'Schema drift detected on REST Countries API', 'Upstream renamed capital field and removed flag', 'open', NOW(), NULL),
+  ('00000000-0000-0000-0000-000000000007', '00000000-0000-0000-0000-000000000003', 'latency', 'medium', 'High latency on JSONPlaceholder', '3 consecutive calls >1000ms', 'recovering', NOW(), NULL),
+  ('00000000-0000-0000-0000-000000000008', '00000000-0000-0000-0000-000000000005', 'dependency', 'low', 'SSL cert issue on Wikipedia', 'SSL cert expires in 12 days', 'open', NOW(), NULL),
   ('00000000-0000-0000-0000-000000000009', '00000000-0000-0000-0000-000000000004', 'error', 'medium', '5xx error burst on Open-Meteo', '5xx burst (7 requests/5min)', 'resolved', NOW(), NOW());
 
 -- Incident events
