@@ -2,13 +2,13 @@
 
 const fs = require('fs')
 const path = require('path')
-const { query, execute } = require('../lib/db')
+const { query, execute, pool } = require('../lib/db')
 const anomaly = require('./anomaly')
 const dns = require('dns')
 const tls = require('tls')
 
 // Load afterProbe hooks (C2 contract): hooks/afterProbe/*.js
-// ctx = { monitor, probe, pool }
+// ctx = { monitor, probe, payload, pool }
 function loadAfterProbeHooks() {
   const hooksDir = path.join(__dirname, '../hooks/afterProbe')
   try {
@@ -24,12 +24,37 @@ function loadAfterProbeHooks() {
 
 const afterProbeHooks = loadAfterProbeHooks()
 
+// Maximum response body we buffer for schema extraction (1 MB).
+// Real JSON API responses are far smaller; this only guards against pathological
+// payloads (huge arrays, binary content) taking the process down.
+const MAX_PAYLOAD_BYTES = 1024 * 1024
+
+// Read and parse the response body so afterProbe hooks can diff the schema.
+// Never throws: a missing, oversized or non-JSON body yields null, which hooks
+// must treat as "no payload available" rather than as a schema change.
+async function readPayload(response, monitor, ok) {
+  // Website probes return HTML, which carries no API schema worth diffing.
+  if (monitor.type !== 'api') return null
+  // An error response is not the contract we monitor; skip it so a 5xx body is
+  // never mistaken for schema drift.
+  if (!ok) return null
+
+  try {
+    const text = await response.text()
+    if (!text || text.length > MAX_PAYLOAD_BYTES) return null
+    return JSON.parse(text)
+  } catch (e) {
+    return null
+  }
+}
+
 async function runProbe(monitor) {
   const url = new URL(monitor.url)
   const hostname = url.hostname
   const protocol = url.protocol.replace(':')
 
   let statusCode, latencyMs, ok, error = '', schemaOk = true, dnsOk = true, sslDaysLeft = null
+  let responsePayload = null
 
   const start = Date.now()
 
@@ -56,11 +81,15 @@ async function runProbe(monitor) {
       signal: controller.signal,
       redirect: 'follow',
     })
-    clearTimeout(timeoutId)
-
     statusCode = response.status
     latencyMs = Date.now() - start
     ok = statusCode < 400
+
+    // Read the body while the timeout is still armed: a response whose headers
+    // arrive quickly but whose body stalls must still be abortable.
+    responsePayload = await readPayload(response, monitor, ok)
+
+    clearTimeout(timeoutId)
 
     // SSL days left (for HTTPS)
     if (protocol === 'https') {
@@ -142,7 +171,9 @@ async function runProbe(monitor) {
   const probe = result.rows[0]
 
   // Run afterProbe hooks (C2 contract)
-  const ctx = { monitor, probe, pool }
+  // payload is the parsed response body: null for websites, failed probes and
+  // non-JSON responses. Hooks must handle null explicitly.
+  const ctx = { monitor, probe, payload: responsePayload, pool }
   for (const hook of afterProbeHooks) {
     try {
       await hook.run(ctx)
