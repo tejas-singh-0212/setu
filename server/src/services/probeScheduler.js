@@ -16,8 +16,20 @@ function init(server, poolInstance) {
 
       for (const monitor of monitors) {
         const intervalSec = monitor.interval_sec || 60
-        // node-cron format: second minute hour day month day-of-week
-        const cronExpr = `*/${intervalSec} * * * *` // every N seconds
+        // node-cron's 5-field expression is minute hour day month weekday:
+        // the first field is MINUTES, not seconds. interval_sec is in seconds,
+        // so it must be converted — otherwise `*/60` means "minute 0 of every
+        // hour" (once an hour) instead of once a minute.
+        const intervalMin = Math.max(1, Math.round(intervalSec / 60))
+        if (intervalSec < 60) {
+          console.warn(
+            `Monitor ${monitor.id}: interval ${intervalSec}s raised to 60s (cron granularity is 1 minute)`
+          )
+        }
+        // A 5-field cron cannot express a step above 59, so fall back to hours.
+        const cronExpr = intervalMin <= 59
+          ? `*/${intervalMin} * * * *`
+          : `0 */${Math.min(23, Math.max(1, Math.round(intervalMin / 60)))} * * *`
         NodeCron.schedule(cronExpr, async () => {
           try {
             const { runProbe } = require('./probes')
@@ -27,7 +39,7 @@ function init(server, poolInstance) {
             console.error(`Error in scheduled probe for ${monitor.id}:`, e)
           }
         })
-        console.log(`Cron job started for monitor ${monitor.id}: every ${intervalSec}s`)
+        console.log(`Cron job started for monitor ${monitor.id}: ${cronExpr} (~${intervalSec}s)`)
       }
     } catch (e) {
       console.error('Failed to start cron jobs:', e)
