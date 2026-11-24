@@ -4,16 +4,15 @@ const { requireAuth } = require('../middleware/auth')
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    const [totalMonitors, apiMonitors, websiteMonitors, openIncidents, recentProbes, avgHealthScore, avgResponseTime, dependencyWarningCount] = await Promise.all([
+    const [totalMonitors, apiMonitors, websiteMonitors, openIncidents, avgHealthScore, avgResponseTime, dependencyWarningCount] = await Promise.all([
       query('SELECT COUNT(*) as count FROM monitor'),
       query("SELECT COUNT(*) as count FROM monitor WHERE type = 'api'"),
       query("SELECT COUNT(*) as count FROM monitor WHERE type = 'website'"),
       query("SELECT COUNT(*) as count FROM incident WHERE status = 'open'"),
-      `SELECT * FROM probe WHERE at >= NOW() - INTERVAL '24 hours'`,
       // Average health score
       query(`SELECT AVG(health_score) as avg FROM monitor WHERE last_probed_at IS NOT NULL`),
       // Average response time
-      `SELECT AVG(latency_ms) as avg FROM probe WHERE at >= NOW() - INTERVAL '24 hours'`,
+      query(`SELECT AVG(latency_ms) as avg FROM probe WHERE at >= NOW() - INTERVAL '24 hours'`),
       // Dependency warning count
       query("SELECT COUNT(*) as count FROM dependencycheck WHERE ssl_days_left <= 14"),
     ])
