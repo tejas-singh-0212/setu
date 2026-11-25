@@ -9,7 +9,7 @@ router.get('/', requireAuth, async (req, res, next) => {
   try {
     const monitorId = req.query.monitor
     const range = req.query.range || '24h'
-    const history = await probeSvc.getHistory(monitorId, range)
+    const history = await probeSvc.getHistory(monitorId, range, req.session.userId)
     res.json(history)
   } catch (e) { next(e) }
 })

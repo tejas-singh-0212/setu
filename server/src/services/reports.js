@@ -13,10 +13,12 @@ const INTELLIGENT_BENCHMARK = 91
 // Recovery actions that reached execution (anything past approval).
 const EXECUTED_STATUSES = ['executed', 'verified', 'failed']
 
-async function stats(days) {
+async function stats(days, userId) {
   const { rows } = await query(
     `WITH inc AS (
-       SELECT * FROM incident WHERE opened_at >= NOW() - make_interval(days => $1)
+       SELECT i.* FROM incident i
+       JOIN monitor m ON m.id = i.monitor_id
+       WHERE m.user_id = $2 AND i.opened_at >= NOW() - make_interval(days => $1)
      ),
      manual AS (
        SELECT DISTINCT ra.incident_id FROM recoveryaction ra
@@ -31,7 +33,7 @@ async function stats(days) {
           WHERE ra.approved_by IS NOT NULL AND ra.approved_by <> 'system')::int AS manual_approvals,
        (SELECT AVG(EXTRACT(EPOCH FROM (closed_at - opened_at)) / 60) FROM inc
           WHERE status = 'resolved' AND closed_at IS NOT NULL) AS mttr_minutes`,
-    [days]
+    [days, userId]
   )
   const r = rows[0]
   return {
@@ -42,14 +44,17 @@ async function stats(days) {
   }
 }
 
-async function effectiveness(days) {
+async function effectiveness(days, userId) {
   const { rows } = await query(
     `SELECT
        COUNT(*) FILTER (WHERE ra.status = ANY($2))::int AS executed,
        COUNT(*) FILTER (WHERE ra.status = 'verified')::int AS verified
-     FROM recoveryaction ra JOIN incident i ON i.id = ra.incident_id
-     WHERE COALESCE(ra.executed_at, i.opened_at) >= NOW() - make_interval(days => $1)`,
-    [days, EXECUTED_STATUSES]
+     FROM recoveryaction ra
+     JOIN incident i ON i.id = ra.incident_id
+     JOIN monitor m ON m.id = i.monitor_id
+     WHERE m.user_id = $3
+       AND COALESCE(ra.executed_at, i.opened_at) >= NOW() - make_interval(days => $1)`,
+    [days, EXECUTED_STATUSES, userId]
   )
   const { executed, verified } = rows[0]
   const measured = executed > 0
@@ -62,7 +67,7 @@ async function effectiveness(days) {
   }
 }
 
-async function history(days) {
+async function history(days, userId) {
   const { rows } = await query(
     `SELECT i.id, i.opened_at, i.closed_at, i.type, i.severity, i.status, i.title,
             i.probable_cause, i.diagnosis, m.id AS monitor_id, m.name AS monitor_name,
@@ -78,9 +83,9 @@ async function history(days) {
        SELECT (payload->>'passed')::boolean AS passed FROM incidentevent
        WHERE incident_id = i.id AND kind = 'postcheck' ORDER BY at DESC LIMIT 1
      ) pc ON true
-     WHERE i.opened_at >= NOW() - make_interval(days => $1)
+     WHERE m.user_id = $2 AND i.opened_at >= NOW() - make_interval(days => $1)
      ORDER BY i.opened_at DESC`,
-    [days]
+    [days, userId]
   )
   return rows.map((r) => {
     const postCheck = r.post_check_ok ?? r.event_post_check ?? null
@@ -106,9 +111,9 @@ async function history(days) {
   })
 }
 
-async function build(range = '7d') {
+async function build(range = '7d', userId) {
   const days = RANGE_DAYS[range]
-  const [s, e, h] = await Promise.all([stats(days), effectiveness(days), history(days)])
+  const [s, e, h] = await Promise.all([stats(days, userId), effectiveness(days, userId), history(days, userId)])
   return { range, stats: s, effectiveness: e, history: h }
 }
 

@@ -45,7 +45,12 @@ async function diagnose(incident) {
   let ragHits = []
   let ragUsed = 0
   try {
-    const enabled = await query(`SELECT value FROM setting WHERE key = 'ragEnabled'`)
+    const enabled = await query(
+      `SELECT s.value FROM setting s
+       JOIN monitor m ON m.id = $2
+       WHERE s.key = 'ragEnabled' AND s.user_id = m.user_id`,
+      ['ragEnabled', incident.monitor_id]
+    )
     const on = enabled.rows.length ? enabled.rows[0].value !== false : true
     if (on) {
       ragHits = await rag.retrieve(`${incident.title} ${incident.probable_cause || ''}`.trim(), 4)

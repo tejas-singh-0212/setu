@@ -14,7 +14,7 @@ router.get('/', requireAuth, async (req, res, next) => {
     }
     const monitorId = req.query.monitor || null
     if (monitorId && !UUID.test(monitorId)) return res.status(400).json({ error: 'Invalid monitor id' })
-    res.json(await telemetry.load({ range, monitorId }))
+    res.json(await telemetry.load({ range, monitorId, userId: req.session.userId }))
   } catch (e) { next(e) }
 })
 

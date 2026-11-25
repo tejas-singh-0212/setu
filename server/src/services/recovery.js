@@ -14,12 +14,29 @@ class RecoveryError extends Error {
   }
 }
 
-async function audit(entityId, action, actor, payload) {
+async function audit(entityId, action, actor, payload, userId) {
   await query(
-    `INSERT INTO auditlog (entity_type, entity_id, action, actor, payload)
-     VALUES ('recovery_action', $1, $2, $3, $4::jsonb)`,
-    [entityId, action, actor || 'system', JSON.stringify(payload || {})]
+    `INSERT INTO auditlog (entity_type, entity_id, action, actor, payload, user_id)
+     VALUES ('recovery_action', $1, $2, $3, $4::jsonb, $5)`,
+    [entityId, action, actor || 'system', JSON.stringify(payload || {}), userId || null]
   )
+}
+
+// Ownership gate: an action/incident is reachable only through the user's own
+// monitor. Returns the row or throws a 404 (never reveals other users' rows).
+async function ownedAction(id, actor) {
+  const { rows } = await query(
+    `SELECT ra.*, m.user_id AS owner_id
+     FROM recoveryaction ra
+     LEFT JOIN incident i ON i.id = ra.incident_id
+     LEFT JOIN monitor m ON m.id = i.monitor_id
+     WHERE ra.id = $1`,
+    [id]
+  )
+  if (!rows.length || !actor || rows[0].owner_id !== actor) {
+    throw new RecoveryError('Recovery action not found', 404)
+  }
+  return rows[0]
 }
 
 async function addEvent(incidentId, kind, actor, payload) {
@@ -32,20 +49,32 @@ async function addEvent(incidentId, kind, actor, payload) {
 }
 
 // ---------- POST /api/recovery — propose (NEVER executes) ----------
-async function propose({ incidentId, kind, payload = {}, actor }) {
+async function propose({ incidentId, kind, payload = {}, actor, userId = actor }) {
   if (!KINDS.includes(kind)) {
     throw new RecoveryError(`kind must be one of: ${KINDS.join(', ')}`)
   }
 
-  const incident = await query(`SELECT * FROM incident WHERE id = $1`, [incidentId])
-  if (!incident.rows.length) throw new RecoveryError('Incident not found', 404)
+  const incident = await query(
+    `SELECT i.*, m.user_id AS owner_id
+     FROM incident i JOIN monitor m ON m.id = i.monitor_id
+     WHERE i.id = $1`,
+    [incidentId]
+  )
+  if (!incident.rows.length || incident.rows[0].owner_id !== userId) {
+    throw new RecoveryError('Incident not found', 404)
+  }
   const inc = incident.rows[0]
 
-  // Safety limit: max executed recovery actions per hour (429 past the limit)
-  const maxPerHour = Number((await settingsSvc.getSetting('maxRecoveryPerHour')) ?? 3)
+  // Safety limit: max executed recovery actions per hour, per user (429 past the limit)
+  const maxPerHour = Number((await settingsSvc.getSetting('maxRecoveryPerHour', userId)) ?? 3)
   const recent = await query(
-    `SELECT COUNT(*)::int AS n FROM recoveryaction
-     WHERE executed_at >= NOW() - INTERVAL '1 hour' AND status IN ('executed', 'verified')`
+    `SELECT COUNT(*)::int AS n FROM recoveryaction ra
+     JOIN incident i ON i.id = ra.incident_id
+     JOIN monitor m ON m.id = i.monitor_id
+     WHERE m.user_id = $1
+       AND ra.executed_at >= NOW() - INTERVAL '1 hour'
+       AND ra.status IN ('executed', 'verified')`,
+    [userId]
   )
   if (recent.rows[0].n >= maxPerHour) {
     throw new RecoveryError(`Recovery limit reached (${maxPerHour}/hour) — try again later`, 429)
@@ -62,7 +91,7 @@ async function propose({ incidentId, kind, payload = {}, actor }) {
   const action = inserted.rows[0]
 
   await addEvent(inc.id, 'proposed', actor, { kind, payload: body, actionId: action.id })
-  await audit(action.id, 'recovery.propose', actor, { incidentId: inc.id, kind })
+  await audit(action.id, 'recovery.propose', actor, { incidentId: inc.id, kind }, userId)
 
   // Incident moves to diagnosing→recovering only after approval; proposing keeps state
   if (inc.status === 'diagnosing' || inc.status === 'open') {
@@ -78,10 +107,15 @@ async function approve(id, actor) {
   try {
     await client.query('BEGIN')
     const { rows } = await client.query(
-      `SELECT * FROM recoveryaction WHERE id = $1 FOR UPDATE`,
+      `SELECT ra.*, m.user_id AS owner_id
+       FROM recoveryaction ra
+       LEFT JOIN incident i ON i.id = ra.incident_id
+       LEFT JOIN monitor m ON m.id = i.monitor_id
+       WHERE ra.id = $1
+       FOR UPDATE OF ra`,
       [id]
     )
-    if (!rows.length) {
+    if (!rows.length || rows[0].owner_id !== actor) {
       await client.query('ROLLBACK')
       throw new RecoveryError('Recovery action not found', 404)
     }
@@ -163,9 +197,9 @@ async function approve(id, actor) {
       )
     }
     await client.query(
-      `INSERT INTO auditlog (entity_type, entity_id, action, actor, payload)
-       VALUES ('recovery_action', $1, 'recovery.execute', $2, $3::jsonb)`,
-      [id, actor || 'user', JSON.stringify({ kind: action.kind, incidentId: action.incident_id, payload })]
+      `INSERT INTO auditlog (entity_type, entity_id, action, actor, payload, user_id)
+       VALUES ('recovery_action', $1, 'recovery.execute', $2, $3::jsonb, $4)`,
+      [id, actor || 'user', JSON.stringify({ kind: action.kind, incidentId: action.incident_id, payload }), actor]
     )
 
     await client.query('COMMIT')
@@ -180,14 +214,12 @@ async function approve(id, actor) {
 
 // ---------- POST /api/recovery/:id/reject ----------
 async function reject(id, actor) {
-  const { rows } = await query(`SELECT * FROM recoveryaction WHERE id = $1`, [id])
-  if (!rows.length) throw new RecoveryError('Recovery action not found', 404)
-  const action = rows[0]
+  const action = await ownedAction(id, actor)
   if (action.status !== 'pending') throw new RecoveryError(`Action is already ${action.status}`, 409)
 
   await query(`UPDATE recoveryaction SET status = 'rejected', approved_by = $2 WHERE id = $1`, [id, actor || 'user'])
   await addEvent(action.incident_id, 'rejected', actor, { actionId: id, kind: action.kind })
-  await audit(id, 'recovery.reject', actor, { incidentId: action.incident_id })
+  await audit(id, 'recovery.reject', actor, { incidentId: action.incident_id }, actor)
 
   if (action.incident_id) {
     await query(
@@ -200,9 +232,7 @@ async function reject(id, actor) {
 
 // ---------- POST /api/recovery/:id/verify — post-check probe ----------
 async function verify(id, actor) {
-  const { rows } = await query(`SELECT * FROM recoveryaction WHERE id = $1`, [id])
-  if (!rows.length) throw new RecoveryError('Recovery action not found', 404)
-  const action = rows[0]
+  const action = await ownedAction(id, actor)
   if (!['executed', 'approved'].includes(action.status)) {
     throw new RecoveryError('Action must be executed before verification', 409)
   }
@@ -238,7 +268,7 @@ async function verify(id, actor) {
     )
     await addEvent(action.incident_id, 'postcheck', actor, { actionId: id, passed: postCheckOk })
   }
-  await audit(id, 'recovery.verify', actor, { postCheckOk })
+  await audit(id, 'recovery.verify', actor, { postCheckOk }, actor)
 
   // Progressive RAG: every VERIFIED fix joins the knowledge base, so retrieval
   // improves with the team's actual fix history (never blocks the response).

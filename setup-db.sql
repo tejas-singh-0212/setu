@@ -7,13 +7,37 @@
 
 CREATE EXTENSION IF NOT EXISTS vector;
 
--- ---------- Types ----------
-CREATE TYPE monitor_type AS ENUM ('website', 'api');
-CREATE TYPE monitor_status AS ENUM ('active', 'paused');
-CREATE TYPE incident_status AS ENUM ('open', 'diagnosing', 'recovering', 'resolved', 'failed');
-CREATE TYPE recovery_action_status AS ENUM ('pending', 'approved', 'rejected', 'executed', 'verified', 'failed');
-CREATE TYPE change_type AS ENUM ('renamed', 'removed', 'type_changed');
-CREATE TYPE incident_type AS ENUM ('drift', 'latency', 'error', 'dependency');
+-- ---------- Types (idempotent: CREATE TYPE has no IF NOT EXISTS) ----------
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'monitor_type') THEN
+    CREATE TYPE monitor_type AS ENUM ('website', 'api');
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'monitor_status') THEN
+    CREATE TYPE monitor_status AS ENUM ('active', 'paused');
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'incident_status') THEN
+    CREATE TYPE incident_status AS ENUM ('open', 'diagnosing', 'recovering', 'resolved', 'failed');
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'recovery_action_status') THEN
+    CREATE TYPE recovery_action_status AS ENUM ('pending', 'approved', 'rejected', 'executed', 'verified', 'failed');
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'change_type') THEN
+    CREATE TYPE change_type AS ENUM ('renamed', 'removed', 'type_changed');
+  END IF;
+END $$;
+DO $$ BEGIN
+  IF NOT EXISTS (SELECT 1 FROM pg_type WHERE typname = 'incident_type') THEN
+    CREATE TYPE incident_type AS ENUM ('drift', 'latency', 'error', 'dependency');
+  END IF;
+END $$;
 
 -- ---------- Session store (connect-pg-simple) ----------
 CREATE TABLE IF NOT EXISTS session (
@@ -117,6 +141,7 @@ CREATE TABLE IF NOT EXISTS DependencyCheck (
 CREATE TABLE IF NOT EXISTS Recommendation (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   monitor_id UUID REFERENCES Monitor(id) ON DELETE SET NULL,
+  user_id UUID REFERENCES "User"(id) ON DELETE CASCADE,
   title VARCHAR(500) NOT NULL,
   why TEXT NOT NULL,
   action JSONB DEFAULT '{}'::jsonb,
@@ -124,6 +149,12 @@ CREATE TABLE IF NOT EXISTS Recommendation (
   status VARCHAR(50) DEFAULT 'open',
   created_at TIMESTAMP DEFAULT NOW()
 );
+-- Upgrade older DBs: recommendations were global rows shared by every account.
+ALTER TABLE Recommendation ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES "User"(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_recommendation_user ON Recommendation (user_id);
+UPDATE Recommendation r SET user_id = m.user_id
+  FROM Monitor m WHERE r.monitor_id = m.id AND r.user_id IS NULL;
+UPDATE Recommendation SET user_id = '00000000-0000-0000-0000-000000000001' WHERE user_id IS NULL;
 
 CREATE TABLE IF NOT EXISTS SchemaVersion (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -163,6 +194,20 @@ CREATE TABLE IF NOT EXISTS AuditLog (
   timestamp TIMESTAMP DEFAULT NOW(),
   payload JSONB
 );
+-- Audit rows belong to the owner of the entity they describe (history page is per user).
+ALTER TABLE AuditLog ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES "User"(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_auditlog_user ON AuditLog (user_id);
+UPDATE AuditLog a SET user_id = m.user_id
+  FROM incident i JOIN Monitor m ON m.id = i.monitor_id
+  WHERE a.entity_type = 'incident' AND a.entity_id = i.id AND a.user_id IS NULL;
+UPDATE AuditLog a SET user_id = m.user_id
+  FROM RecoveryAction ra
+  JOIN incident i ON i.id = ra.incident_id JOIN Monitor m ON m.id = i.monitor_id
+  WHERE a.entity_type = 'recovery_action' AND a.entity_id = ra.id AND a.user_id IS NULL;
+UPDATE AuditLog a SET user_id = m.user_id
+  FROM SchemaVersion sv JOIN Monitor m ON m.id = sv.monitor_id
+  WHERE a.entity_type = 'schema_version' AND a.entity_id = sv.id AND a.user_id IS NULL;
+UPDATE AuditLog SET user_id = '00000000-0000-0000-0000-000000000001' WHERE user_id IS NULL;
 
 -- pgvector embeddings (384-dim; server seeds them via npm run seed)
 CREATE TABLE IF NOT EXISTS Embedding (
@@ -176,21 +221,16 @@ CREATE INDEX IF NOT EXISTS idx_embedding_vector ON Embedding
   USING hnsw (vector vector_cosine_ops);
 
 CREATE TABLE IF NOT EXISTS Setting (
-  key VARCHAR(100) PRIMARY KEY,
+  key VARCHAR(100) NOT NULL,
   value JSONB NOT NULL,
-  updated_at TIMESTAMP DEFAULT NOW()
+  updated_at TIMESTAMP DEFAULT NOW(),
+  user_id UUID REFERENCES "User"(id) ON DELETE CASCADE
 );
-
--- ---------- Settings defaults ----------
-INSERT INTO Setting (key, value) VALUES
-  ('latencyThresholdMs', '1000'::jsonb),
-  ('consecutiveSlow', '3'::jsonb),
-  ('maxRecoveryPerHour', '3'::jsonb),
-  ('requireApproval', 'true'::jsonb),
-  ('dryRunDefault', 'true'::jsonb),
-  ('probeIntervalDefault', '60'::jsonb),
-  ('ragEnabled', 'true'::jsonb)
-ON CONFLICT (key) DO NOTHING;
+-- Upgrade older DBs: settings were one global row per key; scope them per user.
+ALTER TABLE Setting ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES "User"(id) ON DELETE CASCADE;
+ALTER TABLE Setting DROP CONSTRAINT IF EXISTS setting_pkey;
+UPDATE Setting SET user_id = '00000000-0000-0000-0000-000000000001' WHERE user_id IS NULL;
+CREATE UNIQUE INDEX IF NOT EXISTS idx_setting_key_user ON Setting (key, user_id);
 
 -- =====================================================================
 -- Seed data — context.md §7 canonical demo story (idempotent by id)
@@ -200,6 +240,17 @@ ON CONFLICT (key) DO NOTHING;
 INSERT INTO "User" (id, email, name, avatar_url, provider, provider_id)
 VALUES ('00000000-0000-0000-0000-000000000001', 'sarah.chen@example.com', 'Sarah Chen', NULL, 'google', 'GOOGLE123')
 ON CONFLICT (id) DO NOTHING;
+
+-- ---------- Settings defaults (demo account; other accounts inherit code defaults) ----------
+INSERT INTO Setting (key, value, user_id) VALUES
+  ('latencyThresholdMs', '1000'::jsonb, '00000000-0000-0000-0000-000000000001'),
+  ('consecutiveSlow', '3'::jsonb, '00000000-0000-0000-0000-000000000001'),
+  ('maxRecoveryPerHour', '3'::jsonb, '00000000-0000-0000-0000-000000000001'),
+  ('requireApproval', 'true'::jsonb, '00000000-0000-0000-0000-000000000001'),
+  ('dryRunDefault', 'true'::jsonb, '00000000-0000-0000-0000-000000000001'),
+  ('probeIntervalDefault', '60'::jsonb, '00000000-0000-0000-0000-000000000001'),
+  ('ragEnabled', 'true'::jsonb, '00000000-0000-0000-0000-000000000001')
+ON CONFLICT (key, user_id) DO NOTHING;
 
 -- 4 monitors (context.md §5.3 / §7)
 INSERT INTO Monitor (id, user_id, name, type, url, method, interval_sec, timeout_ms, retries, cache_enabled, status, health_score, last_probed_at) VALUES
@@ -303,12 +354,12 @@ INSERT INTO DependencyCheck (id, monitor_id, at, dns_ok, ssl_issuer, ssl_expires
   ('00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000005', NOW(), true, 'DigiCert', NOW() + INTERVAL '84 days', 84, '{"hosts":["www.wikipedia.org"],"addresses":["208.80.154.224"]}'::jsonb, false)
 ON CONFLICT (id) DO NOTHING;
 
--- Recommendations (context.md §5.9)
-INSERT INTO Recommendation (id, monitor_id, title, why, action, source, status) VALUES
-  ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000003', 'Add retry with exponential backoff to JSONPlaceholder monitor', '12 slow calls this week; 3 recovered by retry in similar past incidents (RAG ×5)', '{"kind":"retry","retries":2,"backoff":"exponential"}'::jsonb, 'telemetry', 'open'),
-  ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000002', 'Bake capital_city remap into the transform permanently', '2nd drift this month on the same field', '{"kind":"transform","fix":"capital→capital_city"}'::jsonb, 'rag', 'open'),
-  ('00000000-0000-0000-0000-000000000024', NULL, 'Extend website probe interval to 2 minutes', '0 anomalies on website monitors in 7 days; cuts noise', '{"kind":"interval","minutes":120}'::jsonb, 'telemetry', 'open'),
-  ('00000000-0000-0000-0000-000000000025', '00000000-0000-0000-0000-000000000002', 'Renew SSL certificate for restcountries.com', 'Expires in 12 days (from dependencies)', '{"kind":"ssl_renew"}'::jsonb, 'dependency', 'open')
+-- Recommendations (context.md §5.9) — owned by the demo account
+INSERT INTO Recommendation (id, monitor_id, user_id, title, why, action, source, status) VALUES
+  ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001', 'Add retry with exponential backoff to JSONPlaceholder monitor', '12 slow calls this week; 3 recovered by retry in similar past incidents (RAG ×5)', '{"kind":"retry","retries":2,"backoff":"exponential"}'::jsonb, 'telemetry', 'open'),
+  ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'Bake capital_city remap into the transform permanently', '2nd drift this month on the same field', '{"kind":"transform","fix":"capital→capital_city"}'::jsonb, 'rag', 'open'),
+  ('00000000-0000-0000-0000-000000000024', NULL, '00000000-0000-0000-0000-000000000001', 'Extend website probe interval to 2 minutes', '0 anomalies on website monitors in 7 days; cuts noise', '{"kind":"interval","minutes":120}'::jsonb, 'telemetry', 'open'),
+  ('00000000-0000-0000-0000-000000000025', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'Renew SSL certificate for restcountries.com', 'Expires in 12 days (from dependencies)', '{"kind":"ssl_renew"}'::jsonb, 'dependency', 'open')
 ON CONFLICT (id) DO NOTHING;
 
 -- Schema versions + change + mapping fix (REST Countries drift story)
@@ -331,9 +382,9 @@ INSERT INTO MappingFix (id, change_id, fix_code, proposed_by, approved_by, appro
 ON CONFLICT (id) DO NOTHING;
 
 -- Audit trail (resolved incident)
-INSERT INTO AuditLog (id, entity_type, entity_id, action, actor, payload) VALUES
+INSERT INTO AuditLog (id, entity_type, entity_id, action, actor, payload, user_id) VALUES
   ('00000000-0000-0000-0000-000000000030', 'incident', '00000000-0000-0000-0000-000000000009', 'note', 'system',
-   '{"message":"Error incident resolved via retry policy"}'::jsonb)
+   '{"message":"Error incident resolved via retry policy"}'::jsonb, '00000000-0000-0000-0000-000000000001')
 ON CONFLICT (id) DO NOTHING;
 
 SELECT 'Setu schema + seed complete' AS result;

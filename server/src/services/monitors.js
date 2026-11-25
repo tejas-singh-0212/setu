@@ -108,8 +108,11 @@ async function create(userId, data) {
   const type = data.type || 'website'
   if (!['website', 'api'].includes(type)) throw badRequest('type must be "website" or "api"')
   const method = String(data.method || 'GET').toUpperCase()
-  if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD'].includes(method)) {
-    throw badRequest('Unsupported HTTP method')
+  // Monitors are passive probes: only safe, non-mutating methods. A monitor
+  // fires automatically on a schedule (with retries), so state-changing
+  // methods (PUT/PATCH/DELETE) could mutate the target by accident.
+  if (!['GET', 'POST'].includes(method)) {
+    throw badRequest('Only GET and POST methods are supported for monitors')
   }
   const url = await assertPublicUrl(data.url) // SSRF guard
 
@@ -173,8 +176,8 @@ async function deleteMon(id, userId) {
   return result.rows[0]
 }
 
-async function getById(id) {
-  const result = await query('SELECT * FROM monitor WHERE id = $1', [id])
+async function getById(id, userId) {
+  const result = await query('SELECT * FROM monitor WHERE id = $1 AND user_id = $2', [id, userId])
   return result.rows[0]
 }
 

@@ -194,13 +194,19 @@ async function runProbe(monitor) {
 
 const RANGE_MS = { '1h': 3600000, '6h': 21600000, '24h': 86400000, '7d': 604800000 }
 
-async function getHistory(monitorId, range = '24h') {
+async function getHistory(monitorId, range = '24h', userId = null) {
   const ms = RANGE_MS[range] || RANGE_MS['24h']
   const from = new Date(Date.now() - ms)
 
   const result = await query(
-    `SELECT * FROM probe WHERE monitor_id = $1 AND at >= $2 ORDER BY at DESC LIMIT 500`,
-    [monitorId, from]
+    `SELECT p.* FROM probe p
+     JOIN monitor m ON m.id = p.monitor_id
+     WHERE m.user_id = $1
+       AND ($2::uuid IS NULL OR p.monitor_id = $2)
+       AND p.at >= $3
+     ORDER BY p.at DESC
+     LIMIT 500`,
+    [userId, monitorId || null, from]
   )
   return result.rows
 }

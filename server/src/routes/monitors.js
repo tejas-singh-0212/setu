@@ -64,7 +64,7 @@ router.delete('/:id', requireAuth, async (req, res, next) => {
 // POST /api/monitors/:id/probe — run one probe now
 router.post('/:id/probe', requireAuth, async (req, res, next) => {
   try {
-    const monitor = await monitorSvc.getById(req.params.id)
+    const monitor = await monitorSvc.getById(req.params.id, req.session.userId)
     if (!monitor) return res.status(404).json({ error: 'Monitor not found' })
     const probe = await probeSvc.runProbe(monitor)
     res.json(probe)

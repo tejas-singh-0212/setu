@@ -9,6 +9,7 @@ const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 // GET / — { versions, audit }
 router.get('/', requireAuth, async (req, res, next) => {
   try {
+    const userId = req.session.userId
     const [versions, audit] = await Promise.all([
       query(
         `SELECT sv.id, sv.monitor_id, m.name AS monitor_name, sv.version, sv.schema_json, sv.status, sv.created_at,
@@ -20,14 +21,18 @@ router.get('/', requireAuth, async (req, res, next) => {
                   MAX(detected_at) AS last_detected_at
            FROM changeevent WHERE new_schema_id = sv.id
          ) ce ON true
-         ORDER BY m.name, sv.created_at, sv.version`
+         WHERE m.user_id = $1
+         ORDER BY m.name, sv.created_at, sv.version`,
+        [userId]
       ),
       query(
         `SELECT a.id, a.entity_type, a.entity_id, a.action, a.actor, a.timestamp, a.payload,
                 COALESCE(u.name, a.actor) AS actor_name
          FROM auditlog a
          LEFT JOIN "User" u ON u.id::text = a.actor
-         ORDER BY a.timestamp DESC LIMIT 50`
+         WHERE a.user_id = $1
+         ORDER BY a.timestamp DESC LIMIT 50`,
+        [userId]
       ),
     ])
     res.json({
@@ -65,7 +70,13 @@ router.post('/rollback/:versionId', requireAuth, async (req, res, next) => {
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
-    const target = await client.query('SELECT * FROM schemaversion WHERE id = $1 FOR UPDATE', [req.params.versionId])
+    const target = await client.query(
+      `SELECT sv.* FROM schemaversion sv
+       JOIN monitor m ON m.id = sv.monitor_id
+       WHERE sv.id = $1 AND m.user_id = $2
+       FOR UPDATE OF sv`,
+      [req.params.versionId, req.session.userId]
+    )
     if (!target.rows.length) {
       await client.query('ROLLBACK')
       return res.status(404).json({ error: 'Schema version not found' })
@@ -84,8 +95,8 @@ router.post('/rollback/:versionId', requireAuth, async (req, res, next) => {
       [version.id]
     )
     await client.query(
-      `INSERT INTO auditlog (entity_type, entity_id, action, actor, payload)
-       VALUES ('schema_version', $1, 'schema.rollback', $2, $3::jsonb)`,
+      `INSERT INTO auditlog (entity_type, entity_id, action, actor, payload, user_id)
+       VALUES ('schema_version', $1, 'schema.rollback', $2, $3::jsonb, $4)`,
       [
         version.id,
         actor,
@@ -94,6 +105,7 @@ router.post('/rollback/:versionId', requireAuth, async (req, res, next) => {
           version: version.version,
           previous: previous.rows.map((r) => ({ id: r.id, version: r.version })),
         }),
+        req.session.userId,
       ]
     )
     await client.query('COMMIT')

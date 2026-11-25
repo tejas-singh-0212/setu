@@ -1,5 +1,5 @@
 // Settings service (Part 3) — canonical reader/writer for the `setting` table.
-// Anyone may require this file and call getSetting(key) / getAll().
+// Rows are scoped per user (user_id column); a user with no rows gets DEFAULTS.
 
 const { query, pool } = require('../lib/db')
 
@@ -29,15 +29,17 @@ const LOCKED = ['requireApproval', 'dryRunDefault']
 // AuditLog.entity_id is a NOT NULL uuid; settings have no row id, so use the nil uuid.
 const SETTINGS_ENTITY_ID = '00000000-0000-0000-0000-000000000000'
 
-async function getAll() {
-  const { rows } = await query('SELECT key, value FROM setting')
+async function getAll(userId) {
   const out = { ...DEFAULTS }
+  if (!userId) return out
+  const { rows } = await query('SELECT key, value FROM setting WHERE user_id = $1', [userId])
   for (const r of rows) out[r.key] = r.value
   return out
 }
 
-async function getSetting(key) {
-  const { rows } = await query('SELECT value FROM setting WHERE key = $1', [key])
+async function getSetting(key, userId) {
+  if (!userId) return DEFAULTS[key]
+  const { rows } = await query('SELECT value FROM setting WHERE key = $1 AND user_id = $2', [key, userId])
   return rows.length ? rows[0].value : DEFAULTS[key]
 }
 
@@ -61,9 +63,10 @@ function validate(body) {
   return { errors }
 }
 
-// Upserts the given keys and writes one AuditLog row (action 'settings.update') in a single transaction.
-async function update(body, actor) {
-  const before = await getAll()
+// Upserts the given keys for this user and writes one AuditLog row (action
+// 'settings.update') in a single transaction.
+async function update(body, actor, userId) {
+  const before = await getAll(userId)
   const changes = {}
   for (const [key, value] of Object.entries(body)) {
     if (before[key] !== value) changes[key] = { from: before[key], to: value }
@@ -74,16 +77,16 @@ async function update(body, actor) {
     await client.query('BEGIN')
     for (const key of Object.keys(changes)) {
       await client.query(
-        `INSERT INTO setting (key, value, updated_at) VALUES ($1, $2::jsonb, NOW())
-         ON CONFLICT (key) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
-        [key, JSON.stringify(body[key])]
+        `INSERT INTO setting (key, value, user_id, updated_at) VALUES ($1, $2::jsonb, $3, NOW())
+         ON CONFLICT (key, user_id) DO UPDATE SET value = EXCLUDED.value, updated_at = NOW()`,
+        [key, JSON.stringify(body[key]), userId]
       )
     }
     if (Object.keys(changes).length) {
       await client.query(
-        `INSERT INTO auditlog (entity_type, entity_id, action, actor, payload)
-         VALUES ('setting', $1, 'settings.update', $2, $3::jsonb)`,
-        [SETTINGS_ENTITY_ID, actor || 'system', JSON.stringify({ changes })]
+        `INSERT INTO auditlog (entity_type, entity_id, action, actor, payload, user_id)
+         VALUES ('setting', $1, 'settings.update', $2, $3::jsonb, $4)`,
+        [SETTINGS_ENTITY_ID, actor || 'system', JSON.stringify({ changes }), userId]
       )
     }
     await client.query('COMMIT')
@@ -93,7 +96,7 @@ async function update(body, actor) {
   } finally {
     client.release()
   }
-  return { settings: await getAll(), changed: Object.keys(changes) }
+  return { settings: await getAll(userId), changed: Object.keys(changes) }
 }
 
 module.exports = { DEFAULTS, WRITABLE, LOCKED, getAll, getSetting, validate, update }

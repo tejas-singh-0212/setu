@@ -3,8 +3,8 @@
 
 const { query } = require('../lib/db')
 
-async function getNumberSetting(key, fallback) {
-  const result = await query('SELECT value FROM setting WHERE key = $1', [key])
+async function getNumberSetting(key, fallback, userId) {
+  const result = await query('SELECT value FROM setting WHERE key = $1 AND user_id = $2', [key, userId])
   if (!result.rows.length) return fallback
   const v = result.rows[0].value
   const n = typeof v === 'object' && v !== null ? Number(v.value ?? v) : Number(v)
@@ -36,8 +36,8 @@ async function createIncidentIfNotExists(monitorId, type, severity, title, proba
 async function evaluate(probe, monitor) {
   if (!monitor) return
   const [threshold, consecutiveSlow] = await Promise.all([
-    getNumberSetting('latencyThresholdMs', 1000),
-    getNumberSetting('consecutiveSlow', 3),
+    getNumberSetting('latencyThresholdMs', 1000, monitor.user_id),
+    getNumberSetting('consecutiveSlow', 3, monitor.user_id),
   ])
 
   // Latency anomaly: N consecutive probes over the threshold
