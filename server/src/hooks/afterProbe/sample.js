@@ -1,18 +1,15 @@
-// Sample afterProbe hook — runs after every probe (C2 contract)
-
-const { pool } = require('../../lib/db')
+// Sample afterProbe hook (C2) — template for hook authors; log-only so it
+// never double-penalisises health (runProbe already updates health_score).
+// Copy this file, rename it, and edit run(ctx).
 
 module.exports = {
   name: 'sample-after-probe',
   run: async (ctx) => {
     const { monitor, probe } = ctx
-    // Example: update monitor health score based on probe result
-    if (!probe.ok) {
-      await pool.query(
-        'UPDATE monitor SET health_score = GREATEST(health_score - 5, 0) WHERE id = $1',
-        [monitor.id]
-      )
-    }
-    console.log(`After-probe hook "${this.name}" ran for monitor ${monitor.id}, probe ok: ${probe.ok}`)
+    // ctx = { monitor, probe, payload, pool }
+    // payload = parsed JSON response body for API monitors (else null)
+    console.log(
+      `[hook] after-probe monitor="${monitor.name}" ok=${probe.ok} latency=${probe.latency_ms}ms`
+    )
   },
 }

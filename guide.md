@@ -6,7 +6,7 @@ How to build and ship your part. Read once, keep it open while you work.
 
 ## 1. Setup (once)
 
-**Prereqs:** Node 20+ · a Postgres database with **pgvector** (Neon free — enable the extension) · git
+**Prereqs:** Node 20+ · a **Supabase** Postgres project (pgvector enabled) · git
 
 ```bash
 git clone <repo-url>
@@ -16,8 +16,8 @@ cd setu
 cd server
 cp .env.example .env        # fill DATABASE_URL, OAuth IDs, SESSION_SECRET, LLM_API_URL
 npm install
-npx prisma migrate dev      # creates tables
-npx prisma db seed          # demo data (REST Countries story)
+# Supabase: SQL Editor → run setup-db.sql (schema + demo story seed)
+npm run seed                # pgvector embeddings for RAG (once)
 npm run dev                 # → http://localhost:4000
 
 # Frontend (second terminal)
@@ -27,8 +27,9 @@ npm run dev                 # → http://localhost:5173 (proxies /api to :4000)
 ```
 
 **OAuth (do this on day 1 — it blocks login):**
-- Google Cloud Console → Credentials → OAuth client (Web) → redirect URI `http://localhost:5173/api/auth/google/callback` + prod URI later
-- GitHub → Settings → Developer settings → OAuth App → callback `.../api/auth/github/callback`
+- Google Cloud Console → Credentials → OAuth client (Web) → **Authorized redirect URI**: `http://localhost:4000/api/auth/google/callback` (+ prod URI later)
+- GitHub → Settings → Developer settings → OAuth App → **Authorization callback URL**: `http://localhost:4000/api/auth/github/callback`
+- Callbacks are sent as absolute URLs from `PUBLIC_BASE_URL` (default `http://localhost:4000`), so the single URI above works from both the Vite dev host (:5173) and single-origin (:4000)
 - Put client IDs/secrets in `server/.env` only — **never commit**
 
 ---
@@ -42,16 +43,17 @@ setu/
 ├── context.md                ← full product/design context → paste into AI agents
 ├── docs/                     ← DFD, ER, sitemap exports
 │
-├── server/                   ← Express + Prisma (Backend)
+├── setup-db.sql              ← SINGLE SOURCE OF TRUTH: all tables + canonical seed
+│
+├── server/                   ← Express (Backend)
 │   ├── src/
-│   │   ├── index.js          # app bootstrap (port 4000)
-│   │   ├── routes/           # auth, monitors, probes, incidents, recovery, dependencies, recommendations, reports, settings
-│   │   ├── services/         # probeScheduler, anomaly, diagnosis, recovery, rag, llm, reports
+│   │   ├── index.js          # app bootstrap (port 4000) + static client serve
+│   │   ├── routes/           # auth, monitors, probes, incidents, recovery, recommendations, llm, dependencies, telemetry, reports, settings, history, health
+│   │   ├── services/         # probeScheduler, anomaly, diagnosis, recovery, rag, llm, schemaDiff, checks, reports
+│   │   ├── hooks/            # afterProbe/ + scheduled/ drop-ins (C2)
 │   │   ├── middleware/       # auth.js (requireAuth), errorHandler.js
-│   │   └── lib/              # prisma.js client
-│   ├── prisma/
-│   │   ├── schema.prisma     # all tables (users, monitors, probes, incidents, recovery_actions, …)
-│   │   └── seed.js           # canonical demo data from context.md §7
+│   │   └── lib/              # db.js — pg Pool + query/execute helpers
+│   ├── scripts/seed.js       # pgvector embeddings (npm run seed)
 │   ├── .env.example
 │   └── package.json
 │
@@ -62,14 +64,14 @@ setu/
 │   │   ├── pages/            # Login, Onboarding, Dashboard, Monitors, Incidents, DiffApproval, Telemetry, Dependencies, Recommendations, History, Settings, UIStates
 │   │   ├── components/       # Sidebar, Topbar, AppLayout, StatCard, Pill, DataTable, Modal, Overlay…
 │   │   ├── lib/api.js        # fetch wrapper (credentials: 'include')
-│   │   ├── lib/mock.js       # temporary data until API is ready — DELETE at parity
+│   │   ├── api.js            # fetch helper (auto-prefixes /api, credentials)
 │   │   └── styles/
 │   │       ├── components.css        # ported from v1 (.btn, .card, .pill, .overlay)
 │   │       └── tailwind.config.js    # same tokens as v1 (cream, brand, ink, ok…)
 │   ├── index.html
 │   └── package.json
 │
-└── root *.html, assets/js/shell.js    # v1 screens — REFERENCE ONLY for the React rebuild
+└── frontend/*.html + assets/          # v1 screens — REFERENCE ONLY for the React rebuild
 ```
 
 ---
@@ -80,11 +82,11 @@ setu/
 1. **Tokens only** — colors/type via Tailwind config; no hardcoded hex/fonts, no dark mode
 2. **Reuse components** — `StatCard`, `Pill`, `DataTable`, `Modal`… don't restyle buttons/cards per page
 3. **One page = one file** in `pages/`; shared shell lives in `components/` — don't edit `Sidebar`/`Topbar` without owner
-4. **No invented data** — fetch from `/api`; until your endpoint exists use `lib/mock.js` (same canonical numbers as context.md §7) and flag it in your PR
+4. **No invented data** — fetch every screen from `/api`; there is no mock layer (canonical numbers live in the `setup-db.sql` seed)
 5. **Every screen has loading + error + empty states** (context.md §5.12 patterns)
 
 **Backend**
-6. **All DB access via Prisma** — no raw SQL outside `schema.prisma`/migrations
+6. **All DB access via `lib/db.js`** (`query`/`execute`) — SQL lives in `setup-db.sql` (schema) and services (queries); never hand-edit tables
 7. **Routes thin, services fat** — route parses/validates → service does the work
 8. **Auth on everything** — `requireAuth` on all `/api/*` except `/api/auth/google|github`
 9. **Secrets only in `.env`** — never in code, never committed; `.env.example` lists keys only
@@ -165,11 +167,11 @@ module.exports = router;
 
 Give the agent **all four in one message:**
 1. `context.md` — whole file (your screen's spec is in §5)
-2. **The existing v1 HTML file at repo root** (`dashboard.html`, `diff-approval.html`, `history.html`, `latency.html`, `settings.html`, `ui-states.html`, `onboarding.html`) — the markup is your reference: port its structure, class names (`.card`, `.pill-*`, `.btn-*`, `.table-base`) and exact text into JSX. *(New screens — Login, Monitors, Incidents, Dependencies, Recommendations — have no v1 file; context.md §5 is their sole spec.)*
-3. The reference screenshot (Figma export / `docs/screenshots/`)
+2. **The existing v1 HTML file in `frontend/`** (`dashboard.html`, `diff-approval.html`, `history.html`, `latency.html`, `settings.html`, `ui-states.html`, `onboarding.html`) — the markup is your reference: port its structure, class names (`.card`, `.pill-*`, `.btn-*`, `.table-base`) and exact text into JSX. *(New screens — Login, Monitors, Incidents, Dependencies, Recommendations — have no v1 file; context.md §5 is their sole spec.)*
+3. The reference screenshot (Figma export)
 4. This line:
 
-> "Build `<Page>.jsx` for the Setu React client. Follow context.md §5.X exactly — layout, sections, text, canonical data. **Port the structure, class names, and copy from the provided v1 HTML file**, replacing static markup with live data via the api helper. Use existing components from `../components` and Tailwind tokens only; fall back to `lib/mock.js` until the endpoint exists. Do not add routes, colors, or screens beyond the spec."
+> "Build `<Page>.jsx` for the Setu React client. Follow context.md §5.X exactly — layout, sections, text, canonical data. **Port the structure, class names, and copy from the provided v1 HTML file**, replacing static markup with live data via the api helper. Use existing components from `../components` and Tailwind tokens only; Do not add routes, colors, or screens beyond the spec."
 
 **Rules for the v1 HTML files:** treat them as **read-only reference** — never edit or delete one until its React page passes the checklist below; then delete it in the same PR.
 
@@ -213,12 +215,12 @@ Overlays: `.overlay` + `openOverlay/closeOverlay` from v1 `interactions.js` — 
 - [ ] Renders at 1440px, no horizontal scroll at 1024px
 - [ ] Sidebar/topbar from shared components; `dataPage` correct; active state right
 - [ ] Loading + error + empty states present
-- [ ] Data matches context.md §7 (or flags mock usage)
+- [ ] Data matches context.md §7 (sourced from the API / setup-db.sql seed)
 - [ ] All §7 navigation wired; no dead buttons
 - [ ] No console errors; no hardcoded colors
 
 **Backend PR**
-- [ ] `prisma migrate dev` clean; seed reproduces context.md §7
+- [ ] `setup-db.sql` re-runs cleanly (idempotent); seed reproduces context.md §7; `npm run seed` loads embeddings
 - [ ] `requireAuth` on all routes except OAuth
 - [ ] Service covered by curl examples in PR description
 - [ ] Recovery path enforces approval + safety limits (test: reject → nothing executes)
@@ -233,7 +235,7 @@ Full agent-ready briefs: **[parts.md](parts.md)** — one section per coding age
 
 | Part | Scope | Owns (summary) |
 |---|---|---|
-| **Part 1** | Foundation & Monitoring | Server bootstrap, full Prisma schema + seed, OAuth, auth/monitors/probes/health routes, probe scheduler + anomaly; client foundation (router, components, tokens, api/mock); screens: Login, Onboarding, Dashboard, Monitors, UI States |
+| **Part 1** | Foundation & Monitoring | Server bootstrap, full SQL schema (`setup-db.sql`) + seed, OAuth, auth/monitors/probes/health routes, probe scheduler + anomaly; client foundation (router, components, tokens, api); screens: Login, Onboarding, Dashboard, Monitors, UI States |
 | **Part 2** | Incidents & Intelligence | Drift-detection hook, incidents/recovery/recommendations/llm routes, diagnosis + RAG + LLM + recovery services (approval gate & safety); screens: Incidents, Diff & Approval, Recommendations |
 | **Part 3** | Operations & Reporting | Telemetry/dependencies/reports/settings/history routes, DNS+SSL checks (scheduled hook), report queries; screens: Telemetry, Dependencies, History & Reports, Settings |
 
@@ -245,7 +247,7 @@ Reviewers: schema/API contracts → Part 1 · diagnosis/recovery logic → Part 
 
 | Piece | Where | Notes |
 |---|---|---|
-| Postgres (+pgvector) | Neon free | `DATABASE_URL`, run `prisma migrate deploy` |
+| Postgres (+pgvector) | Supabase free | `DATABASE_URL`, apply `setup-db.sql` in the SQL Editor |
 | Express API | Render / Railway free | env vars: DB, OAuth, SESSION_SECRET, LLM_API_URL |
 | React build | Netlify / Vercel | static build, API URL via env/proxy |
 | OAuth | Google + GitHub consoles | add prod redirect URIs **before** demo |

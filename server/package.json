@@ -1,14 +1,12 @@
 {
   "name": "setu-server",
   "version": "1.0.0",
-  "description": "Setu backend — Express + Prisma + PostgreSQL + pgvector",
+  "description": "Setu backend — Express + PostgreSQL (pgvector) + Passport OAuth",
   "type": "commonjs",
   "scripts": {
     "dev": "nodemon src/index.js",
     "start": "node src/index.js",
-    "prisma:generate": "prisma generate",
-    "prisma:migrate": "prisma migrate deploy",
-    "prisma:seed": "prisma db seed",
+    "seed": "node scripts/seed.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "dependencies": {
@@ -22,15 +20,9 @@
     "passport-github2": "^0.1.12",
     "passport-google-oauth20": "^2.0.0",
     "pg": "^8.23.1",
-    "prisma": "^5.21.1",
-    "uuid": "^14.0.3",
-    "zod": "^3.23.8"
+    "uuid": "^14.0.3"
   },
   "devDependencies": {
-    "@types/express": "^4.17.21",
-    "@types/express-session": "^1.18.5",
-    "@types/node": "^20.14.2",
-    "nodemon": "^3.1.4",
-    "tsx": "^4.17.0"
+    "nodemon": "^3.1.4"
   }
 }
