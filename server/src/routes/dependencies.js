@@ -30,6 +30,7 @@ const isWarning = (c) =>
 // GET / — latest check per monitor + warning count + today's counters
 router.get('/', requireAuth, async (req, res, next) => {
   try {
+    const userId = req.session.userId
     const [latest, today] = await Promise.all([
       query(
         `SELECT m.id AS monitor_id, m.name AS monitor_name, m.type AS monitor_type, m.url,
@@ -39,12 +40,17 @@ router.get('/', requireAuth, async (req, res, next) => {
          LEFT JOIN LATERAL (
            SELECT * FROM dependencycheck WHERE monitor_id = m.id ORDER BY at DESC LIMIT 1
          ) dc ON true
-         ORDER BY m.created_at, m.name`
+         WHERE m.user_id = $1
+         ORDER BY m.created_at, m.name`,
+        [userId]
       ),
       query(
         `SELECT COUNT(*)::int AS checks,
-                COUNT(*) FILTER (WHERE dns_ok = false OR ssl_days_left IS NULL)::int AS failures
-         FROM dependencycheck WHERE at >= date_trunc('day', NOW())`
+                COUNT(*) FILTER (WHERE dc.dns_ok = false OR dc.ssl_days_left IS NULL)::int AS failures
+         FROM dependencycheck dc
+         JOIN monitor m ON m.id = dc.monitor_id
+         WHERE m.user_id = $1 AND dc.at >= date_trunc('day', NOW())`,
+        [userId]
       ),
     ])
     const items = latest.rows.map(toDto)
@@ -72,13 +78,19 @@ router.post('/remind', requireAuth, async (req, res, next) => {
     }
     if (monitorId !== null && !UUID.test(monitorId)) return res.status(400).json({ error: 'Invalid monitorId' })
     if (monitorId) {
-      const m = await query('SELECT id FROM monitor WHERE id = $1', [monitorId])
+      const m = await query('SELECT id FROM monitor WHERE id = $1 AND user_id = $2', [monitorId, req.session.userId])
       if (!m.rows.length) return res.status(404).json({ error: 'Monitor not found' })
     }
     const { rows } = await query(
-      `INSERT INTO recommendation (monitor_id, title, why, action, source, status)
-       VALUES ($1, $2, $3, $4::jsonb, 'dependency', 'open') RETURNING *`,
-      [monitorId, title.trim().slice(0, 500), why.trim(), JSON.stringify({ kind: 'ssl_renew' })]
+      `INSERT INTO recommendation (monitor_id, user_id, title, why, action, source, status)
+       VALUES ($1, $2, $3, $4, $5::jsonb, 'dependency', 'open') RETURNING *`,
+      [
+        monitorId,
+        req.session.userId,
+        title.trim().slice(0, 500),
+        why.trim(),
+        JSON.stringify({ kind: 'ssl_renew' }),
+      ]
     )
     res.status(201).json(rows[0])
   } catch (e) { next(e) }
@@ -88,7 +100,10 @@ router.post('/remind', requireAuth, async (req, res, next) => {
 router.post('/:monitorId/check', requireAuth, async (req, res, next) => {
   try {
     if (!UUID.test(req.params.monitorId)) return res.status(404).json({ error: 'Monitor not found' })
-    const m = await query('SELECT * FROM monitor WHERE id = $1', [req.params.monitorId])
+    const m = await query('SELECT * FROM monitor WHERE id = $1 AND user_id = $2', [
+      req.params.monitorId,
+      req.session.userId,
+    ])
     if (!m.rows.length) return res.status(404).json({ error: 'Monitor not found' })
     const monitor = m.rows[0]
     const { check, incident } = await checks.checkMonitor(monitor)

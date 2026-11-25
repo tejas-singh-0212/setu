@@ -10,7 +10,7 @@ router.get('/', requireAuth, async (req, res, next) => {
     if (!(range in reports.RANGE_DAYS)) {
       return res.status(400).json({ error: `range must be one of ${Object.keys(reports.RANGE_DAYS).join(', ')}` })
     }
-    res.json(await reports.build(range))
+    res.json(await reports.build(range, req.session.userId))
   } catch (e) { next(e) }
 })
 

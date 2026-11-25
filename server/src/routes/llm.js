@@ -9,8 +9,8 @@ const rag = require('../services/rag')
 router.get('/status', requireAuth, async (req, res, next) => {
   try {
     const configured = llm.isConfigured()
-    const ragRow = await require('../lib/db').query(`SELECT value FROM setting WHERE key = 'ragEnabled'`)
-    const ragEnabled = ragRow.rows.length ? ragRow.rows[0].value !== false : true
+    const settings = require('../services/settings')
+    const ragEnabled = (await settings.getSetting('ragEnabled', req.session.userId)) !== false
     const ragCount = await rag.count()
 
     res.json({

@@ -26,50 +26,70 @@ function timeAgo(iso) {
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
+    const userId = req.session.userId
     const [counts, openIncidents, avgHealth, avgResponse, depWarnings, recent, resolvedRes] = await Promise.all([
       query(
         `SELECT COUNT(*)::int AS total,
                 COUNT(*) FILTER (WHERE type = 'api')::int AS api,
                 COUNT(*) FILTER (WHERE type = 'website')::int AS website
-         FROM monitor`
+         FROM monitor WHERE user_id = $1`,
+        [userId]
       ),
-      query(`SELECT COUNT(*)::int AS n FROM incident WHERE status NOT IN ('resolved', 'failed')`),
-      query(`SELECT COALESCE(AVG(health_score), 0)::int AS avg FROM monitor WHERE last_probed_at IS NOT NULL`),
       query(
-        `SELECT COALESCE(AVG(latency_ms), 0)::int AS avg FROM probe
-         WHERE at >= NOW() - INTERVAL '24 hours' AND ok = true`
+        `SELECT COUNT(*)::int AS n FROM incident i
+         JOIN monitor m ON m.id = i.monitor_id
+         WHERE m.user_id = $1 AND i.status NOT IN ('resolved', 'failed')`,
+        [userId]
+      ),
+      query(
+        `SELECT COALESCE(AVG(health_score), 0)::int AS avg FROM monitor
+         WHERE user_id = $1 AND last_probed_at IS NOT NULL`,
+        [userId]
+      ),
+      query(
+        `SELECT COALESCE(AVG(p.latency_ms), 0)::int AS avg FROM probe p
+         JOIN monitor m ON m.id = p.monitor_id
+         WHERE m.user_id = $1 AND p.at >= NOW() - INTERVAL '24 hours' AND p.ok = true`,
+        [userId]
       ),
       query(
         `SELECT COUNT(*)::int AS n FROM (
-           SELECT DISTINCT monitor_id FROM dependencycheck dc
-           WHERE dc.id = (
-             SELECT id FROM dependencycheck WHERE monitor_id = dc.monitor_id ORDER BY at DESC LIMIT 1
-           ) AND (dns_ok = false OR rate_limited = true OR (ssl_days_left IS NOT NULL AND ssl_days_left <= 14))
-         ) t`
+           SELECT DISTINCT dc.monitor_id FROM dependencycheck dc
+           JOIN monitor m ON m.id = dc.monitor_id
+           WHERE m.user_id = $1
+             AND dc.id = (
+               SELECT id FROM dependencycheck WHERE monitor_id = dc.monitor_id ORDER BY at DESC LIMIT 1
+             ) AND (dc.dns_ok = false OR dc.rate_limited = true OR (dc.ssl_days_left IS NOT NULL AND dc.ssl_days_left <= 14))
+         ) t`,
+        [userId]
       ),
       query(
         `SELECT i.id, i.title, i.type, i.severity, i.status, i.probable_cause, i.opened_at,
                 m.id AS monitor_id, m.name AS monitor_name
          FROM incident i
          JOIN monitor m ON m.id = i.monitor_id
-         WHERE i.status NOT IN ('resolved', 'failed')
+         WHERE m.user_id = $1 AND i.status NOT IN ('resolved', 'failed')
          ORDER BY i.opened_at DESC
-         LIMIT 5`
+         LIMIT 5`,
+        [userId]
       ),
       query(
         `SELECT i.id, i.title, i.type, i.severity, i.status, i.closed_at,
                 m.id AS monitor_id, m.name AS monitor_name
          FROM incident i
          JOIN monitor m ON m.id = i.monitor_id
-         WHERE i.status = 'resolved' AND i.closed_at >= NOW() - INTERVAL '6 hours'
+         WHERE m.user_id = $1 AND i.status = 'resolved' AND i.closed_at >= NOW() - INTERVAL '6 hours'
          ORDER BY i.closed_at DESC
-         LIMIT 1`
+         LIMIT 1`,
+        [userId]
       ),
     ])
 
     const p99 = await query(
-      `SELECT COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY latency_ms), 0)::int AS p99
-       FROM probe WHERE at >= NOW() - INTERVAL '24 hours' AND ok = true`
+      `SELECT COALESCE(PERCENTILE_CONT(0.99) WITHIN GROUP (ORDER BY p.latency_ms), 0)::int AS p99
+       FROM probe p JOIN monitor m ON m.id = p.monitor_id
+       WHERE m.user_id = $1 AND p.at >= NOW() - INTERVAL '24 hours' AND p.ok = true`,
+      [userId]
     )
 
     const openFeed = recent.rows.map((r) => ({

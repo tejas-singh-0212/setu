@@ -6,7 +6,11 @@ const settings = require('../services/settings')
 
 router.get('/', requireAuth, async (req, res, next) => {
   try {
-    res.json({ settings: await settings.getAll(), writable: Object.keys(settings.WRITABLE), locked: settings.LOCKED })
+    res.json({
+      settings: await settings.getAll(req.session.userId),
+      writable: Object.keys(settings.WRITABLE),
+      locked: settings.LOCKED,
+    })
   } catch (e) { next(e) }
 })
 
@@ -16,7 +20,7 @@ router.put('/', requireAuth, async (req, res, next) => {
     const { errors } = settings.validate(req.body)
     if (errors.length) return res.status(400).json({ error: errors.join('; '), errors })
     const actor = req.session?.userId || req.user?.id || 'system'
-    res.json(await settings.update(req.body, actor))
+    res.json(await settings.update(req.body, actor, req.session.userId))
   } catch (e) { next(e) }
 })
 

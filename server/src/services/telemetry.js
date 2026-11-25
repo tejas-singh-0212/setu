@@ -73,8 +73,8 @@ function round2(n) {
 
 // ---------- Loader ----------
 
-async function load({ range = '24h', monitorId = null } = {}) {
-  const settings = await getAll()
+async function load({ range = '24h', monitorId = null, userId = null } = {}) {
+  const settings = await getAll(userId)
   const thresholdMs = Number(settings.latencyThresholdMs)
   const consecutiveTrigger = Number(settings.consecutiveSlow)
 
@@ -82,31 +82,36 @@ async function load({ range = '24h', monitorId = null } = {}) {
   const fromMs = toMs - RANGES[range]
   const from = new Date(fromMs)
 
-  const filter = monitorId ? 'AND p.monitor_id = $2' : ''
-  const params = monitorId ? [from, monitorId] : [from]
-
   const [probeRes, slowRes, monitorsRes, recentRes] = await Promise.all([
     query(
       `SELECT p.at, p.latency_ms, p.ok FROM probe p
-       WHERE p.at >= $1 AND p.latency_ms IS NOT NULL ${filter}`,
-      params
+       JOIN monitor m ON m.id = p.monitor_id
+       WHERE m.user_id = $1 AND p.at >= $2 AND p.latency_ms IS NOT NULL
+         ${monitorId ? 'AND p.monitor_id = $3' : ''}`,
+      monitorId ? [userId, from, monitorId] : [userId, from]
     ),
     query(
       `SELECT p.id, p.at, p.latency_ms, p.status_code, p.ok, p.error, m.id AS monitor_id, m.name AS monitor_name, m.url
        FROM probe p JOIN monitor m ON m.id = p.monitor_id
-       WHERE p.at >= $1 AND p.latency_ms > ${SLOW_CALL_MS} ${filter}
+       WHERE m.user_id = $1 AND p.at >= $2 AND p.latency_ms > ${SLOW_CALL_MS}
+         ${monitorId ? 'AND p.monitor_id = $3' : ''}
        ORDER BY p.at DESC LIMIT ${SLOW_CALL_LIMIT}`,
-      params
+      monitorId ? [userId, from, monitorId] : [userId, from]
     ),
-    query(`SELECT id, name, type, url, timeout_ms, retries, cache_enabled FROM monitor ORDER BY created_at, name`),
+    query(
+      `SELECT id, name, type, url, timeout_ms, retries, cache_enabled FROM monitor
+       WHERE user_id = $1 ORDER BY created_at, name`,
+      [userId]
+    ),
     // Most recent 20 probes per monitor, for the consecutive-slow alert.
     query(
       `SELECT monitor_id, latency_ms FROM (
-         SELECT monitor_id, latency_ms, at,
-                ROW_NUMBER() OVER (PARTITION BY monitor_id ORDER BY at DESC) AS rn
-         FROM probe ${monitorId ? 'WHERE monitor_id = $1' : ''}
+         SELECT p.monitor_id, p.latency_ms, p.at,
+                ROW_NUMBER() OVER (PARTITION BY p.monitor_id ORDER BY p.at DESC) AS rn
+         FROM probe p JOIN monitor m ON m.id = p.monitor_id
+         WHERE m.user_id = $1 ${monitorId ? 'AND p.monitor_id = $2' : ''}
        ) t WHERE rn <= 20 ORDER BY monitor_id, at DESC`,
-      monitorId ? [monitorId] : []
+      monitorId ? [userId, monitorId] : [userId]
     ),
   ])
 

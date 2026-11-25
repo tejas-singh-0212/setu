@@ -14,7 +14,7 @@ function send(res, next, fn) {
 
 // GET /
 router.get('/', requireAuth, (req, res, next) => {
-  send(res, next, () => recSvc.list())
+  send(res, next, () => recSvc.list(req.session.userId))
 })
 
 // POST / — create (used by dependency reminders / future LLM runs)
@@ -34,7 +34,7 @@ router.post('/:id/apply', requireAuth, (req, res, next) => {
 // POST /:id/dismiss
 router.post('/:id/dismiss', requireAuth, (req, res, next) => {
   if (!UUID.test(req.params.id)) return res.status(404).json({ error: 'Recommendation not found' })
-  send(res, next, () => recSvc.dismiss(req.params.id))
+  send(res, next, () => recSvc.dismiss(req.params.id, req.session.userId))
 })
 
 module.exports = router

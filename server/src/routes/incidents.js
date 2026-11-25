@@ -28,8 +28,8 @@ function toDto(r) {
 router.get('/', requireAuth, async (req, res, next) => {
   try {
     const { type, status, range = '7d', q } = req.query
-    const conds = []
-    const params = []
+    const conds = [`m.user_id = $1`]
+    const params = [req.session.userId]
 
     if (type && type !== 'all') {
       params.push(type)
@@ -48,7 +48,7 @@ router.get('/', requireAuth, async (req, res, next) => {
       conds.push(`(i.title ILIKE $${params.length} OR i.probable_cause ILIKE $${params.length} OR m.name ILIKE $${params.length})`)
     }
 
-    const where = conds.length ? `WHERE ${conds.join(' AND ')}` : ''
+    const where = `WHERE ${conds.join(' AND ')}`
     const { rows } = await query(
       `SELECT i.*, m.name AS monitor_name,
               (SELECT COUNT(*)::int FROM recoveryaction ra WHERE ra.incident_id = i.id) AS action_count,
@@ -72,8 +72,9 @@ router.get('/:id', requireAuth, async (req, res, next) => {
 
     const incRes = await query(
       `SELECT i.*, m.name AS monitor_name, m.url AS monitor_url, m.type AS monitor_type
-       FROM incident i JOIN monitor m ON m.id = i.monitor_id WHERE i.id = $1`,
-      [req.params.id]
+       FROM incident i JOIN monitor m ON m.id = i.monitor_id
+       WHERE i.id = $1 AND m.user_id = $2`,
+      [req.params.id, req.session.userId]
     )
     if (!incRes.rows.length) return res.status(404).json({ error: 'Incident not found' })
     const incident = incRes.rows[0]
