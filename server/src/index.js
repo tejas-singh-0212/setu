@@ -31,10 +31,20 @@ app.use(
 )
 
 // Session store → Postgres via connect-pg-simple
+// Refuse to boot production with the dev-default secret (session forgery risk).
+const SESSION_SECRET = process.env.SESSION_SECRET || 'setu-dev-secret-change-me'
+if (
+  process.env.NODE_ENV === 'production' &&
+  (SESSION_SECRET === 'setu-dev-secret-change-me' || SESSION_SECRET.length < 32)
+) {
+  throw new Error(
+    'SESSION_SECRET must be set to a long random value in production — e.g. `openssl rand -hex 32`'
+  )
+}
 app.use(
   session({
     store: new connectPgSession({ pool, tableName: 'session' }),
-    secret: process.env.SESSION_SECRET || 'setu-dev-secret-change-me',
+    secret: SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { maxAge: 24 * 60 * 60 * 1000, sameSite: 'lax' }, // 1 day
