@@ -56,7 +56,8 @@ async function demoUser() {
 }
 
 // Minimal strategy used when OAuth credentials are absent (no console errors,
-// no 500s — the demo user is signed in instead).
+// no 500s — the demo user is signed in instead). DEV/DEMO ONLY: never
+// registered when NODE_ENV=production (see disabledStrategy below).
 function mockStrategy(provider) {
   return {
     name: provider,
@@ -67,6 +68,22 @@ function mockStrategy(provider) {
     },
   }
 }
+
+// Production without credentials: fail the login cleanly instead of signing
+// anyone in — the demo-user fallback must never be reachable in production.
+function disabledStrategy(provider) {
+  return {
+    name: provider,
+    authenticate() {
+      console.error(
+        `${provider} login attempted but credentials are not configured (NODE_ENV=${process.env.NODE_ENV || 'development'})`
+      )
+      this.fail()
+    },
+  }
+}
+
+const allowDemoLogin = process.env.NODE_ENV !== 'production'
 
 // ---------- Google ----------
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
@@ -88,8 +105,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       }
     )
   )
-} else {
+} else if (allowDemoLogin) {
   passport.use('google', mockStrategy('google'))
+} else {
+  passport.use('google', disabledStrategy('google'))
 }
 
 // ---------- GitHub ----------
@@ -112,8 +131,10 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
       }
     )
   )
-} else {
+} else if (allowDemoLogin) {
   passport.use('github', mockStrategy('github'))
+} else {
+  passport.use('github', disabledStrategy('github'))
 }
 
 // Session serialization — store only the user id
