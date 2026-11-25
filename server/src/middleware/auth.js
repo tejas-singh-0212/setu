@@ -129,7 +129,13 @@ passport.deserializeUser((id, done) => {
 // ---------- Middleware ----------
 
 function requireAuth(req, res, next) {
-  if (req.session && req.session.userId) return next()
+  if (req.session && req.session.userId) {
+    // OAuth runs with session:false, so Passport never repopulates req.user on
+    // later requests. Expose the session identity as req.user so routes can use
+    // the conventional contract (idea from PR #13).
+    if (!req.user) req.user = { id: req.session.userId }
+    return next()
+  }
   res.status(401).json({ error: 'Unauthenticated' })
 }
 
@@ -137,6 +143,7 @@ function requireAuth(req, res, next) {
 
 async function loginUser(req, user) {
   req.session.userId = user.id
+  req.user = user // keep req.user consistent for the login request itself
 }
 
 async function logoutUser(req) {
