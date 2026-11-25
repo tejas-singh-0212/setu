@@ -240,6 +240,26 @@ async function verify(id, actor) {
   }
   await audit(id, 'recovery.verify', actor, { postCheckOk })
 
+  // Progressive RAG: every VERIFIED fix joins the knowledge base, so retrieval
+  // improves with the team's actual fix history (never blocks the response).
+  if (postCheckOk) {
+    try {
+      const rag = require('./rag')
+      let monitorName = 'monitor'
+      if (monitorId) {
+        const m = await query(`SELECT name FROM monitor WHERE id = $1`, [monitorId])
+        monitorName = m.rows[0]?.name || monitorName
+      }
+      await rag.index(
+        'incident_fix',
+        action.incident_id,
+        `Verified ${action.kind} recovery on ${monitorName} (post-check passed): ${JSON.stringify(payload).slice(0, 300)}`
+      )
+    } catch (e) {
+      console.error('RAG index of verified fix failed (non-fatal):', e.message)
+    }
+  }
+
   return { ...(await getAction(id)), postCheckOk }
 }
 
