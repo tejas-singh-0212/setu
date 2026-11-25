@@ -8,7 +8,10 @@ dist/
 build/
 
 # Environment variables (containing OAuth credentials, DB passwords, etc.)
-.env
+# Covers .env, .env.local, .env.production, .env.development — any variant.
+.env*
+# ...but keep the template, which is tracked and contains only placeholders.
+!.env.example
 
 # Local database file (if any)
 *.sqlite3
