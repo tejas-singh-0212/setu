@@ -13,16 +13,16 @@ Application health monitoring · Runtime anomaly detection · Error & exception 
 
 | Layer | Choice |
 |---|---|
-| Frontend | **React18 + Vite + Tailwind** (v1 design tokens kept) |
-| Backend | **Node20 + Express** — JSON API, auto-mounted routes |
-| Database | **PostgreSQL + pgvector** via **Prisma** (Neon free) |
+| Frontend | **React 18 + Vite + Tailwind** (v1 design tokens kept) |
+| Backend | **Node 20 + Express** — JSON API, auto-mounted routes |
+| Database | **PostgreSQL + pgvector** (Supabase) — schema & seed in `setup-db.sql`, raw `pg` |
 | Auth | **Google + GitHub OAuth** (no passwords, no teams, no paywall) |
-| LLM / RAG | **OSS model via free inference API** (Groq/OpenRouter) + **pgvector** retrieval |
+| LLM / RAG | **OSS model via free inference API** (OpenRouter/Groq) + **pgvector** retrieval |
 | Scheduler | `node-cron` probe scheduler + drop-in hooks |
 
 ## Screens (12)
 
-| Screen | Route | v1 reference HTML |
+| Screen | Route | v1 reference HTML (`frontend/`) |
 |---|---|---|
 | Login (Google/GitHub) | `/login` | — |
 | Add Monitor | `/onboarding` | `onboarding.html` |
@@ -43,16 +43,27 @@ Application health monitoring · Runtime anomaly detection · Error & exception 
 git clone <your-repo-url>
 cd setu
 
-# Backend
-cd server && cp .env.example .env   # fill DATABASE_URL, OAuth IDs, SESSION_SECRET, LLM_API_URL
-npm install
-npx prisma migrate dev && npx prisma db seed
-npm run dev                          # → :4000
+# 1. Database (Supabase)
+#    - Create a Supabase project
+#    - SQL Editor → paste & run setup-db.sql   (schema + demo story seed)
+#    - (once) cd server && npm install && npm run seed   (pgvector embeddings)
 
-# Frontend (second terminal)
+# 2. Backend
+cd server && cp .env.example .env   # fill DATABASE_URL, SESSION_SECRET, OAuth IDs, LLM_API_URL
+npm install
+npm run dev                          # → http://localhost:4000
+
+# 3. Frontend (second terminal)
 cd client && npm install
-npm run dev                          # → :5173 (proxies /api → :4000)
+npm run dev                          # → http://localhost:5173 (proxies /api → :4000)
 ```
+
+**Single-origin mode:** after `cd client && npm run build`, the Express server
+serves `client/dist` itself — verify/demo everything at `http://localhost:4000`.
+
+**OAuth redirect URIs (localhost):**
+- Google: `http://localhost:4000/api/auth/google/callback`
+- GitHub: `http://localhost:4000/api/auth/github/callback`
 
 ## Repository structure
 
@@ -62,13 +73,13 @@ setu/
 ├── context.md           ← full product/design context → paste into AI agents
 ├── guide.md             ← team instructions (setup, rules, skeletons, nav map)
 ├── parts.md             ← 3 coding-agent briefs with strict file ownership
-├── docs/                ← DFD, ER, sitemap exports
-├── server/              ← Express + Prisma (auth, probes, incidents, recovery…)
-│   ├── src/{routes,services,hooks,middleware,lib}
-│   └── prisma/{schema.prisma, seed.js}
-├── client/              ← React + Vite + Tailwind
-│   └── src/{pages, components, lib, styles}
-└── *.html (root)        ← v1 screens — REFERENCE ONLY for the React rebuild
+├── setup-db.sql         ← SINGLE SOURCE OF TRUTH: schema + canonical seed
+├── frontend/            ← v1 HTML screens — REFERENCE ONLY for the React rebuild
+├── server/              ← Express (auth, probes, incidents, recovery, LLM…)
+│   ├── scripts/seed.js  ← pgvector embeddings (npm run seed)
+│   └── src/{routes,services,hooks,middleware,lib}
+└── client/              ← React + Vite + Tailwind
+    └── src/{pages, components, lib, styles}
 ```
 
 ## How we work

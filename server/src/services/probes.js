@@ -182,9 +182,9 @@ async function runProbe(monitor) {
     }
   }
 
-  // Run anomaly detection
+  // Run anomaly detection (needs the monitor row, not just the probe)
   try {
-    await anomaly.evaluate(probe)
+    await anomaly.evaluate(probe, monitor)
   } catch (e) {
     console.error(`Anomaly evaluation failed for monitor ${monitor.id}:`, e)
   }
@@ -192,13 +192,14 @@ async function runProbe(monitor) {
   return probe
 }
 
+const RANGE_MS = { '1h': 3600000, '6h': 21600000, '24h': 86400000, '7d': 604800000 }
+
 async function getHistory(monitorId, range = '24h') {
-  const now = new Date()
-  const from = new Date()
-  from.setHours(now.getHours() - 24)
+  const ms = RANGE_MS[range] || RANGE_MS['24h']
+  const from = new Date(Date.now() - ms)
 
   const result = await query(
-    `SELECT * FROM probe WHERE monitor_id = $1 AND at >= $2 ORDER BY at DESC LIMIT 100`,
+    `SELECT * FROM probe WHERE monitor_id = $1 AND at >= $2 ORDER BY at DESC LIMIT 500`,
     [monitorId, from]
   )
   return result.rows

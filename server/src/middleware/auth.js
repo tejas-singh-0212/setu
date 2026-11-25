@@ -1,50 +1,74 @@
-// Auth middleware — Passport Google/GitHub OAuth + requireAuth
+// Auth middleware — Passport Google/GitHub OAuth + requireAuth (Part 1, fixed)
+// Login state lives in req.session.userId (set by loginUser). When OAuth
+// credentials are NOT configured, the strategies fall back to the seeded demo
+// user so the app remains fully usable locally.
 
 const passport = require('passport')
 const GoogleStrategy = require('passport-google-oauth20').Strategy
 const GitHubStrategy = require('passport-github2').Strategy
-const { Pool } = require('pg')
 const { v4: uuidv4 } = require('uuid')
-
-// --- Database pool for user upsert ---
 const { pool } = require('../lib/db')
 
-async function findOrCreateUser(profile, done) {
-  const email = profile.emails?.[0]?.value
-  const name = profile.displayName
-  const avatarUrl = profile.photos?.[0]?.value
+const DEMO_EMAIL = 'sarah.chen@example.com'
+
+// OAuth callbacks are ABSOLUTE so exactly one redirect URI per provider works
+// from any dev host (Vite on :5173 or single-origin on :4000).
+const PUBLIC_BASE_URL = process.env.PUBLIC_BASE_URL || 'http://localhost:4000'
+
+async function findOrCreateUser(profile) {
+  // Prefer a real email; fall back to a stable provider-scoped address
+  // (GitHub keeps emails private by default).
+  const email =
+    profile.emails?.[0]?.value ||
+    `${profile.provider}:${profile.id}@users.setu.local`
+  const name = profile.displayName || profile.username || email
+  const avatarUrl = profile.photos?.[0]?.value || null
   const provider = profile.provider
-  const providerId = profile.id
+  const providerId = String(profile.id)
 
-  if (!email) return done(new Error('No email in profile'))
+  const existing = await pool.query('SELECT * FROM "User" WHERE email = $1', [email])
+  if (existing.rows.length) {
+    const user = existing.rows[0]
+    await pool.query(
+      `UPDATE "User" SET name = $2, avatar_url = $3, provider = $4, provider_id = $5 WHERE id = $1`,
+      [user.id, name, avatarUrl, provider, providerId]
+    )
+    return user
+  }
+  const inserted = await pool.query(
+    `INSERT INTO "User" (id, email, name, avatar_url, provider, provider_id, created_at)
+     VALUES ($1, $2, $3, $4, $5, $6, NOW()) RETURNING *`,
+    [uuidv4(), email, name, avatarUrl, provider, providerId]
+  )
+  return inserted.rows[0]
+}
 
-  try {
-    // Check if user exists
-    const { rows } = await pool.query('SELECT * FROM "User" WHERE email = $1', [email])
-    if (rows.length > 0) {
-      const user = rows[0]
-      // Update profile info
-      await pool.query(
-        'UPDATE "User" SET name = $1, avatar_url = $2, provider = $3, provider_id = $4 WHERE id = $5',
-        [name, avatarUrl, provider, providerId, user.id]
-      )
-      return done(null, user)
-    } else {
-      // Create new user
-      const { rows } = await pool.query(
-        `INSERT INTO "User" (id, email, name, avatar_url, provider, provider_id, created_at)
-         VALUES ($1, $2, $3, $4, $5, $6, NOW())
-         RETURNING *`,
-        [uuidv4(), email, name, avatarUrl, provider, providerId]
-      )
-      return done(null, rows[0])
-    }
-  } catch (err) {
-    done(err)
+// Seeded demo user — used as the no-credentials fallback.
+async function demoUser() {
+  const existing = await pool.query('SELECT * FROM "User" WHERE email = $1', [DEMO_EMAIL])
+  if (existing.rows.length) return existing.rows[0]
+  const inserted = await pool.query(
+    `INSERT INTO "User" (id, email, name, avatar_url, provider, provider_id, created_at)
+     VALUES ($1, $2, 'Sarah Chen', NULL, 'google', 'demo', NOW()) RETURNING *`,
+    [uuidv4(), DEMO_EMAIL]
+  )
+  return inserted.rows[0]
+}
+
+// Minimal strategy used when OAuth credentials are absent (no console errors,
+// no 500s — the demo user is signed in instead).
+function mockStrategy(provider) {
+  return {
+    name: provider,
+    authenticate() {
+      demoUser()
+        .then((user) => this.success(user))
+        .catch((err) => this.fail(err))
+    },
   }
 }
 
-// Google Strategy — only if credentials are configured
+// ---------- Google ----------
 if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
   passport.use(
     'google',
@@ -52,12 +76,12 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
       {
         clientID: process.env.GOOGLE_CLIENT_ID,
         clientSecret: process.env.GOOGLE_CLIENT_SECRET,
-        callbackURL: '/api/auth/google/callback',
+        callbackURL: `${PUBLIC_BASE_URL}/api/auth/google/callback`,
         scope: ['profile', 'email'],
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          await findOrCreateUser(profile, done)
+          done(null, await findOrCreateUser(profile))
         } catch (err) {
           done(err)
         }
@@ -65,16 +89,10 @@ if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
     )
   )
 } else {
-  // Mock Google strategy when no credentials — just pass through
-  passport.use(
-    'google',
-    async (accessToken, refreshToken, profile, done) => {
-      done(null, { provider: 'google', id: 'mock-google-id' })
-    }
-  )
+  passport.use('google', mockStrategy('google'))
 }
 
-// GitHub Strategy — only if credentials are configured
+// ---------- GitHub ----------
 if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
   passport.use(
     'github',
@@ -82,11 +100,12 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
       {
         clientID: process.env.GITHUB_CLIENT_ID,
         clientSecret: process.env.GITHUB_CLIENT_SECRET,
-        callbackURL: '/api/auth/github/callback',
+        callbackURL: `${PUBLIC_BASE_URL}/api/auth/github/callback`,
+        scope: ['user:email'],
       },
       async (accessToken, refreshToken, profile, done) => {
         try {
-          await findOrCreateUser(profile, done)
+          done(null, await findOrCreateUser(profile))
         } catch (err) {
           done(err)
         }
@@ -94,46 +113,34 @@ if (process.env.GITHUB_CLIENT_ID && process.env.GITHUB_CLIENT_SECRET) {
     )
   )
 } else {
-  // Mock GitHub strategy when no credentials
-  passport.use(
-    'github',
-    async (accessToken, refreshToken, profile, done) => {
-      done(null, { provider: 'github', id: 'mock-github-id' })
-    }
-  )
+  passport.use('github', mockStrategy('github'))
 }
 
-// Session serialization — store only user id in the session
+// Session serialization — store only the user id
 passport.serializeUser((user, done) => done(null, user.id))
 
 passport.deserializeUser((id, done) => {
   pool.query('SELECT * FROM "User" WHERE id = $1', [id], (err, result) => {
     if (err) return done(err)
-    done(null, result.rows[0])
+    done(null, result.rows[0] || false)
   })
 })
 
-// --- Middleware: requireAuth ---
+// ---------- Middleware ----------
 
 function requireAuth(req, res, next) {
-  if (req.session && req.session.userId) {
-    return next()
-  }
+  if (req.session && req.session.userId) return next()
   res.status(401).json({ error: 'Unauthenticated' })
 }
 
-// --- Auth helpers ---
+// ---------- Auth helpers ----------
 
 async function loginUser(req, user) {
   req.session.userId = user.id
 }
 
 async function logoutUser(req) {
-  req.session.destroy()
+  await new Promise((resolve) => req.session.destroy(() => resolve()))
 }
 
-module.exports = {
-  requireAuth,
-  loginUser,
-  logoutUser,
-}
+module.exports = { requireAuth, loginUser, logoutUser }

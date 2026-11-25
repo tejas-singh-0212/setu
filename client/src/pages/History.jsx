@@ -11,7 +11,12 @@ const TYPE_PILL = { drift: 'bad', latency: 'warn', error: 'bad', dependency: 'wa
 
 const fmtDate = (iso) => (iso ? new Date(iso).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' }) : '—')
 const fmtMinutes = (m) => (m === null || m === undefined ? '—' : `${m}m`)
-const fieldsOf = (v) => (Array.isArray(v?.schema?.fields) ? v.schema.fields : [])
+const fieldsOf = (v) => {
+  const f = v?.schema?.fields
+  if (Array.isArray(f)) return f
+  if (f && typeof f === 'object') return Object.keys(f)
+  return []
+}
 
 function downloadFile(name, content, type) {
   const url = URL.createObjectURL(new Blob([content], { type }))

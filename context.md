@@ -55,14 +55,14 @@ Setu is a **central web platform that automates website & API maintenance** not 
 |---|---|
 | Frontend | **React18 + Vite + Tailwind** — design tokens unchanged (same colors/components as v1) |
 | Backend | **Node20 + Express** — JSON API for the React app |
-| Database | **PostgreSQL + pgvector** (Neon/Supabase free) via **Prisma** ORM |
+| Database | **PostgreSQL + pgvector** (Supabase free) — schema & seed in `setup-db.sql`, data access via raw `pg` |
 | Auth | **Google + GitHub OAuth** (Passport.js), sessions stored in Postgres — no passwords |
 | LLM | **OSS model (Llama/Qwen) via free inference API** (Groq / Cerebras / HuggingFace) — endpoint configured centrally in server env, not by users |
 | RAG | Embeddings (free API or local MiniLM) → **pgvector** in the same Postgres |
 | Scheduler | `node-cron` probe scheduler inside the Express server |
 | Demo target | **REST Countries API** `https://restcountries.com/v3.1/all?fields=...` + sample websites |
 
-Repo: `server/` (Express + Prisma) · `client/` (Vite React) · `docs/` (DFD/ER/sitemap exports).
+Repo: `setup-db.sql` (schema + seed, single source of truth) · `server/` (Express + pg) · `client/` (Vite React) · `frontend/` (v1 HTML reference only).
 
 ---
 

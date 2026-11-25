@@ -1,52 +1,65 @@
-// Probe Scheduler — node-cron per monitor interval + scheduled hooks
+// Probe Scheduler — node-cron per monitor interval + scheduled hooks (C2)
+// Monitors added while running are picked up by a 60s refresh; hooks are
+// awaited so rejections are logged instead of crashing the process.
 
 const NodeCron = require('node-cron')
 const fs = require('fs')
 const path = require('path')
 const { pool } = require('../lib/db')
 
+let monitorTasks = [] // current cron tasks, replaced on refresh
+
+function scheduleMonitor(monitor) {
+  const intervalSec = monitor.interval_sec || 60
+  // node-cron's 5-field expression has MINUTES as field 1 — interval_sec must
+  // be converted, otherwise `*/60` means "minute 0 of every hour".
+  const intervalMin = Math.max(1, Math.round(intervalSec / 60))
+  const cronExpr = intervalMin <= 59
+    ? `*/${intervalMin} * * * *`
+    : `0 */${Math.min(23, Math.max(1, Math.round(intervalMin / 60)))} * * * *`
+  const task = NodeCron.schedule(cronExpr, async () => {
+    try {
+      const { runProbe } = require('./probes')
+      await runProbe(monitor)
+      console.log(`Probe ran for monitor ${monitor.name || monitor.id}`)
+    } catch (e) {
+      console.error(`Error in scheduled probe for ${monitor.id}:`, e)
+    }
+  })
+  console.log(`Cron job started for monitor ${monitor.name || monitor.id}: ${cronExpr}`)
+  return task
+}
+
+async function refreshMonitors() {
+  try {
+    const result = await pool.query(
+      `SELECT * FROM monitor WHERE status = 'active' ORDER BY created_at`
+    )
+    const seen = new Set(result.rows.map((r) => r.id))
+    // Stop tasks for removed/paused monitors
+    monitorTasks = monitorTasks.filter((t) => {
+      if (!seen.has(t.monitorId)) {
+        try { t.task.stop() } catch (e) { /* already stopped */ }
+        return false
+      }
+      return true
+    })
+    const scheduled = new Set(monitorTasks.map((t) => t.monitorId))
+    for (const monitor of result.rows) {
+      if (scheduled.has(monitor.id)) continue
+      monitorTasks.push({ monitorId: monitor.id, task: scheduleMonitor(monitor) })
+    }
+  } catch (e) {
+    console.error('Failed to refresh monitor cron jobs:', e.message)
+  }
+}
+
 function init(server, poolInstance) {
   const usePool = poolInstance || pool
+  void usePool
 
-  // Read monitors from database and schedule cron jobs
-  async function startCronForMonitors() {
-    try {
-      const result = await usePool.query('SELECT * FROM monitor WHERE status = $1', ['active'])
-      const monitors = result.rows
-
-      for (const monitor of monitors) {
-        const intervalSec = monitor.interval_sec || 60
-        // node-cron's 5-field expression is minute hour day month weekday:
-        // the first field is MINUTES, not seconds. interval_sec is in seconds,
-        // so it must be converted — otherwise `*/60` means "minute 0 of every
-        // hour" (once an hour) instead of once a minute.
-        const intervalMin = Math.max(1, Math.round(intervalSec / 60))
-        if (intervalSec < 60) {
-          console.warn(
-            `Monitor ${monitor.id}: interval ${intervalSec}s raised to 60s (cron granularity is 1 minute)`
-          )
-        }
-        // A 5-field cron cannot express a step above 59, so fall back to hours.
-        const cronExpr = intervalMin <= 59
-          ? `*/${intervalMin} * * * *`
-          : `0 */${Math.min(23, Math.max(1, Math.round(intervalMin / 60)))} * * *`
-        NodeCron.schedule(cronExpr, async () => {
-          try {
-            const { runProbe } = require('./probes')
-            await runProbe(monitor)
-            console.log(`Probe ran for monitor ${monitor.id}`)
-          } catch (e) {
-            console.error(`Error in scheduled probe for ${monitor.id}:`, e)
-          }
-        })
-        console.log(`Cron job started for monitor ${monitor.id}: ${cronExpr} (~${intervalSec}s)`)
-      }
-    } catch (e) {
-      console.error('Failed to start cron jobs:', e)
-    }
-  }
-
-  startCronForMonitors()
+  refreshMonitors()
+  setInterval(refreshMonitors, 60000) // pick up new/paused monitors within a minute
 
   // Load scheduled hooks
   const hooksDir = path.join(__dirname, '../hooks/scheduled')
@@ -55,13 +68,13 @@ function init(server, poolInstance) {
     for (const file of hookFiles) {
       const hook = require(path.join(hooksDir, file))
       const intervalMs = hook.intervalMs || 3600000 // default 1h
-      setInterval(() => {
-        try {
-          hook.run()
-        } catch (e) {
-          console.error(`Error in scheduled hook "${hook.name}":`, e)
-        }
-      }, intervalMs)
+      const tick = () => {
+        Promise.resolve()
+          .then(() => hook.run())
+          .catch((e) => console.error(`Scheduled hook "${hook.name}" failed:`, e))
+      }
+      setInterval(tick, intervalMs)
+      tick() // run once at boot so checks exist without waiting a full interval
       console.log(`Scheduled hook "${hook.name}" started: ${intervalMs}ms interval`)
     }
   } catch (e) {

@@ -12,7 +12,7 @@
 any file `server/src/routes/<name>.js` that exports an Express router is automatically mounted at `/api/<name>`. You never edit `index.js`; you only create your route files.
 
 **C2 — Hook loaders** (created by Part 1; you only drop files in):
-- `server/src/hooks/afterProbe/*.js` → `module.exports = { name, run: async (ctx) => {} }` — runs after every probe. `ctx = { monitor, probe, prisma }`.
+- `server/src/hooks/afterProbe/*.js` → `module.exports = { name, run: async (ctx) => {} }` — runs after every probe. `ctx = { monitor, probe, payload, pool }`.
 - `server/src/hooks/scheduled/*.js` → `module.exports = { name, intervalMs, run: async () => {} }` — started by the probe scheduler.
 
 **C3 — Client page contract** (`client/src/App.jsx`, created by Part 1, contains a lazy route map for **all** routes below). Create your pages with these **exact filenames**, default-exported React components:
@@ -39,7 +39,7 @@ any file `server/src/routes/<name>.js` that exports an Express router is automat
 - `GET /api/history` (schema versions/snapshots + audit for the History page) and `POST /api/history/rollback/:versionId` → Part 3 (`routes/history.js`)
 - `GET /api/llm/status` → Part 2 (`routes/llm.js`) — consumed by Part 3's Settings page
 
-**C5 — Database:** `prisma/schema.prisma` is created once by **Part 1 with ALL models** (listed below). Parts 2/3 read/write via `prisma` client only — **never edit schema or seed**. If you think a field is missing, use an existing Json column (e.g. `payload`) — do not alter the schema.
+**C5 — Database:** `setup-db.sql` (repo root) is the single source of truth — created once by **Part 1 with ALL tables** (listed below), applied via the Supabase SQL Editor. Parts 2/3 read/write via raw `pg` (`server/src/lib/db.js` → `query`/`execute`) — **never edit the schema or seed**. If you think a field is missing, use an existing Json column (e.g. `payload`) — do not alter the schema. pgvector embeddings are inserted by `server/scripts/seed.js` (`npm run seed`).
 
 **C6 — Safety invariant:** recovery execution must check (in order): safety limits from `Setting` rows → approval status → execute → post-check. No code path may bypass approval while `requireApproval = true`. (Owned by Part 2's recovery service; everyone respects it.)
 
@@ -55,16 +55,16 @@ any file `server/src/routes/<name>.js` that exports an Express router is automat
 ```
 server/package.json · server/.env.example
 server/src/index.js
-server/src/lib/prisma.js
+server/src/lib/db.js
 server/src/middleware/auth.js · server/src/middleware/errorHandler.js
 server/src/routes/auth.js · monitors.js · probes.js · health.js
 server/src/services/monitors.js · probes.js · probeScheduler.js · anomaly.js
 server/src/hooks/README.md            (docs only — no hook logic)
-prisma/schema.prisma · prisma/seed.js
+setup-db.sql · server/scripts/seed.js
 client/package.json · client/vite.config.js · client/index.html
 client/src/main.jsx · client/src/App.jsx
 client/src/styles/tailwind.config.js · components.css · index.css
-client/src/lib/api.js · client/src/lib/mock.js
+client/src/lib/api.js
 client/src/components/: AppLayout, Sidebar, Topbar, RequireAuth, StatCard,
   Pill, DataTable, Modal, Overlay, Skeleton, ErrorState, EmptyState
 client/src/pages/: Login.jsx, Onboarding.jsx, Dashboard.jsx, Monitors.jsx, UIStates.jsx
@@ -77,11 +77,11 @@ Anything under `server/src/routes/{incidents,recovery,recommendations,llm,teleme
 
 **A. Server bootstrap**
 1. `index.js`: Express on `PORT` (4000) · JSON body · `connect-pg-simple` session store (`SESSION_SECRET`) · `CLIENT_URL` CORS with credentials · **C1 route loader** (readdir `routes/`, mount each file at `/api/<name>`) · **C2 hook loaders** for `hooks/afterProbe/*` and `hooks/scheduled/*` · `errorHandler` middleware last · `GET /api/ping`.
-2. `lib/prisma.js`: PrismaClient singleton.
+2. `lib/db.js`: `pg` Pool singleton + `query(text, params)` / `execute(text, params)` helpers.
 3. `middleware/auth.js`: `requireAuth` (401 JSON if no `req.session.userId`); Passport strategies **Google + GitHub** (profile → upsert `User` → `req.session.userId`); helpers `loginUser`, `logoutUser`.
 4. `.env.example`: `DATABASE_URL, SESSION_SECRET, GOOGLE_CLIENT_ID, GOOGLE_CLIENT_SECRET, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET, LLM_API_URL, LLM_API_KEY, CLIENT_URL, PORT`.
 
-**B. Full Prisma schema** (models + required fields — all three parts depend on these):
+**B. Full SQL schema** (`setup-db.sql` — tables + required fields, all three parts depend on these; run `CREATE EXTENSION IF NOT EXISTS vector;` first):
 - **User**: id, email(unique), name, avatarUrl, provider, providerId, createdAt
 - **Monitor**: id, userId, name, type(`website|api`), url, method(default GET), intervalSec, timeoutMs, retries, cacheEnabled, status(`active|paused`), healthScore, lastProbedAt, createdAt
 - **Probe**: id, monitorId, at, ok, statusCode, latencyMs, schemaOk(Boolean?), error(String?), dnsOk(Boolean?), sslDaysLeft(Int?)
@@ -95,9 +95,9 @@ Anything under `server/src/routes/{incidents,recovery,recommendations,llm,teleme
 - **MappingFix**: id, changeId, fixCode, proposedBy, approvedBy, approvedAt, status
 - **AuditLog**: id, entityType, entityId, action, actor, timestamp, payload(Json)
 - **Setting**: key(String @id), value(Json)
-- **Embedding**: id, kind, refId?, content, vector — column type `Unsupported("vector")` (pgvector, dimension 384). Create the extension first: `CREATE EXTENSION IF NOT EXISTS vector;` (run via `prisma db execute` or Neon SQL editor; document it in README).
+- **Embedding**: id, kind, refId?, content, vector — column type `vector(384)` (pgvector). The extension is created by `setup-db.sql`; embeddings are seeded by `server/scripts/seed.js`.
 
-**C. Seed (`prisma/seed.js`)** — reproduces `context.md` §7 completely, all three parts read this data:
+**C. Seed (`setup-db.sql` data section + `server/scripts/seed.js` for embeddings)** — reproduces `context.md` §7 completely, all three parts read this data:
 - 1 demo User (Sarah Chen, provider google) · Settings defaults: `latencyThresholdMs:1000, consecutiveSlow:3, maxRecoveryPerHour:3, requireApproval:true, dryRunDefault:true, probeIntervalDefault:60, ragEnabled:true`
 - 4 Monitors exactly as `context.md` §5.3 (REST Countries API w/ timeoutMs 5000, retries 0, cacheEnabled false; JSONPlaceholder w/ retries 0; the two websites)
 - ~100 Probes per monitor over last 24h (realistic latencies; JSONPlaceholder includes 1,480ms spike cluster)
@@ -120,7 +120,7 @@ Anything under `server/src/routes/{incidents,recovery,recommendations,llm,teleme
 **F. Client foundation**
 1. Vite + React18, `vite.config.js` proxy `/api → http://localhost:4000`
 2. `styles/tailwind.config.js` = tokens from `context.md` §4; `components.css` = port v1 classes (`.btn-*`, `.card`, `.pill-*`, `.badge-count`, `.table-base`, `.input-base`, `.overlay`); `index.css` = Inter font import
-3. `lib/api.js` = `get/post/patch/del` with `credentials:'include'` + JSON + throw on !ok; `lib/mock.js` = canonical fallback data (flagged `// MOCK — remove at API parity`)
+3. `lib/api.js` = `get/post/put/patch/del` with `credentials:'include'` + JSON + throw on !ok; auto-prefixes `/api`; no mock layer — canonical numbers live in the `setup-db.sql` seed
 4. `components/` kit (used by ALL pages):
    - `AppLayout` — renders Sidebar+Topbar+`<main class="ml-64 pt-14 p-6">`, props `{dataPage, children}`; if `dataPage` is `login|onboarding` render children full-bleed (no shell)
    - `Sidebar` — **8 nav items exactly as `context.md` §4** (Dashboard, Monitors, Incidents+badge, Telemetry, Dependencies, Recommendations, History & Reports, Settings), active from `dataPage` (`diff`→active incidents, `states`→active dashboard), links to the 12 routes in C3, bottom: live status + user card (from `GET /api/auth/me`)
@@ -130,7 +130,7 @@ Anything under `server/src/routes/{incidents,recovery,recommendations,llm,teleme
 5. `App.jsx` — `createBrowserRouter` with **all 12 lazy page entries from C3** + `<RequireAuth>` on everything except `/login`, `/onboarding`, `/states`
 6. `main.jsx`, `index.html` (title "Setu")
 
-**G. Your five pages** (spec = `context.md` §5.X, data from your API, mock only until parity):
+**G. Your five pages** (spec = `context.md` §5.X, all data from your API):
 - **Login** (§5.1) — Google/GitHub buttons hit `/api/auth/google|github`
 - **Onboarding** (§5.2) — `POST /api/monitors` → navigate `/dashboard`
 - **Dashboard** (§5.3) — `GET /api/health` + `GET /api/monitors`; all actions wired per `guide.md` §7
@@ -139,7 +139,7 @@ Anything under `server/src/routes/{incidents,recovery,recommendations,llm,teleme
 
 ### Definition of done
 - [ ] `npm run dev` (server) + `npm run dev` (client) boots; login with GitHub **or** Google works locally
-- [ ] `prisma migrate dev && prisma db seed` clean on a fresh pgvector DB; all seed rows from context.md §7 present
+- [ ] `setup-db.sql` runs clean (idempotent) on a fresh Supabase pgvector DB; `npm run seed` inserts embeddings; all seed rows from context.md §7 present
 - [ ] Route loader mounts ≥5 routers without editing `index.js` again; hook loader runs a sample hook
 - [ ] 5 pages render with real API data; protected routes redirect when logged out
 - [ ] Another part can: create `routes/incidents.js` and reach it at `/api/incidents`; drop `hooks/afterProbe/schemaDiff.js` and see it execute after a probe; create `pages/Telemetry.jsx` and have `/telemetry` work — **verify with a dummy file, then delete it**
@@ -159,7 +159,7 @@ client/src/pages/Incidents.jsx · DiffApproval.jsx · Recommendations.jsx
 ```
 
 ### Never edit
-Part 1/Part 3 files — especially `schema.prisma`, `seed.js`, `index.js`, `App.jsx`, `components/*`. You may `require('../lib/prisma')`, `require('../services/probes')`, import components, and read `Setting` rows.
+Part 1/Part 3 files — especially `setup-db.sql`, `seed.js`, `index.js`, `App.jsx`, `components/*`. You may `require('../lib/db')`, `require('../services/probes')`, import components, and read `Setting` rows.
 
 ### Work items
 
@@ -177,7 +177,7 @@ Part 1/Part 3 files — especially `schema.prisma`, `seed.js`, `index.js`, `App.
   - `POST /:id/verify` — run `probes.runProbe(monitor)` as post-check → `postCheckOk` → status `verified|failed` → incident `resolved|failed` + `IncidentEvent(postcheck)` + `AuditLog`
   - Safety: if `Setting.requireApproval` is true, execute **only** via approve — never from `POST /`
 - `routes/recommendations.js` — `GET /`, `POST /:id/apply` (creates pending `RecoveryAction` from `recommendation.action`, status open→applied, returns action for approval flow), `POST /:id/dismiss`
-- `routes/llm.js` — `GET /status` → `{model: process.env.LLM_API_URL ? 'Llama 3.3 (free inference API)' : null, endpoint: 'configured', ragCount: prisma.embedding.count()}` (no secrets in response)
+- `routes/llm.js` — `GET /status` → `{model: process.env.LLM_API_URL ? 'Llama 3.3 (free inference API)' : null, endpoint: 'configured', ragCount: count from the embedding table}` (no secrets in response)
 
 **C. Services**
 - `services/llm.js` — one client: `chat(system, user)` → POST `LLM_API_URL` (OpenAI-compatible `/chat/completions`) with `LLM_API_KEY` if set; **10s timeout**; on failure throw `LlmUnavailable` (callers fall back to rules — never fail the request)
@@ -216,7 +216,7 @@ client/src/pages/Telemetry.jsx · Dependencies.jsx · History.jsx · Settings.js
 ```
 
 ### Never edit
-Part 1/Part 2 files. You may import `prisma`, `probes` service, components, and read all tables.
+Part 1/Part 2 files. You may import the `pg` pool (`lib/db`), `probes` service, components, and read all tables.
 
 ### Work items
 
@@ -256,7 +256,7 @@ Part 1/Part 2 files. You may import `prisma`, `probes` service, components, and 
 | Path | Part 1 | Part 2 | Part 3 |
 |---|---|---|---|
 | `server/src/index.js`, `lib/`, `middleware/` | ✅ own | — | — |
-| `prisma/schema.prisma`, `seed.js` | ✅ own | read | read |
+| `setup-db.sql`, `server/scripts/seed.js` | ✅ own | read | read |
 | `routes/{auth,monitors,probes,health}.js` | ✅ own | — | — |
 | `routes/{incidents,recovery,recommendations,llm}.js` | — | ✅ own | — |
 | `routes/{telemetry,dependencies,reports,settings,history}.js` | — | — | ✅ own |
