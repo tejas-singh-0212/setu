@@ -1,0 +1,3824 @@
+[
+  {
+    "id": "synthetic-fix-001",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "postal_code": {
+          "type": "string"
+        },
+        "street_address": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "country_code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "postal_code",
+        "city"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "zip_code": {
+          "type": "string"
+        },
+        "street_address": {
+          "type": "string"
+        },
+        "city": {
+          "type": "string"
+        },
+        "country_code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "zip_code",
+        "city"
+      ]
+    },
+    "diff_summary": "The postal_code address field was renamed to zip_code in the order payload.",
+    "mapping": [
+      {
+        "source_path": "$.zip_code",
+        "target_path": "$.postal_code",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-002",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "order_date": {
+          "type": "string"
+        },
+        "order_number": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_number",
+        "order_date"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "creation_date": {
+          "type": "string"
+        },
+        "order_number": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_number",
+        "creation_date"
+      ]
+    },
+    "diff_summary": "The order_date timestamp field was renamed to creation_date by the provider.",
+    "mapping": [
+      {
+        "source_path": "$.creation_date",
+        "target_path": "$.order_date",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-003",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "unit_price": {
+          "type": "number"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "item_name": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sku",
+        "unit_price",
+        "quantity"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "item_price": {
+          "type": "number"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "item_name": {
+          "type": "string"
+        },
+        "quantity": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "sku",
+        "item_price",
+        "quantity"
+      ]
+    },
+    "diff_summary": "The line item unit_price field was renamed to item_price in order item details.",
+    "mapping": [
+      {
+        "source_path": "$.item_price",
+        "target_path": "$.unit_price",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-004",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "phone_number": {
+          "type": "string"
+        },
+        "recipient_name": {
+          "type": "string"
+        },
+        "delivery_notes": {
+          "type": "string"
+        },
+        "is_gift": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "recipient_name",
+        "phone_number"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "contact_phone": {
+          "type": "string"
+        },
+        "recipient_name": {
+          "type": "string"
+        },
+        "delivery_notes": {
+          "type": "string"
+        },
+        "is_gift": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "recipient_name",
+        "contact_phone"
+      ]
+    },
+    "diff_summary": "The recipient phone_number field was renamed to contact_phone.",
+    "mapping": [
+      {
+        "source_path": "$.contact_phone",
+        "target_path": "$.phone_number",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-005",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "shipping_method": {
+          "type": "string"
+        },
+        "tracking_id": {
+          "type": "string"
+        },
+        "service_level": {
+          "type": "string"
+        },
+        "estimated_days": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tracking_id",
+        "shipping_method"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "carrier_code": {
+          "type": "string"
+        },
+        "tracking_id": {
+          "type": "string"
+        },
+        "service_level": {
+          "type": "string"
+        },
+        "estimated_days": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "tracking_id",
+        "carrier_code"
+      ]
+    },
+    "diff_summary": "The shipping_method attribute was renamed to carrier_code in order fulfillment details.",
+    "mapping": [
+      {
+        "source_path": "$.carrier_code",
+        "target_path": "$.shipping_method",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-006",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "discount_amount": {
+          "type": "number"
+        },
+        "coupon_code": {
+          "type": "string"
+        },
+        "subtotal": {
+          "type": "number"
+        },
+        "tax_amount": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "subtotal",
+        "discount_amount"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "promo_discount": {
+          "type": "number"
+        },
+        "coupon_code": {
+          "type": "string"
+        },
+        "subtotal": {
+          "type": "number"
+        },
+        "tax_amount": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "subtotal",
+        "promo_discount"
+      ]
+    },
+    "diff_summary": "The discount_amount deduction was renamed to promo_discount in order totals.",
+    "mapping": [
+      {
+        "source_path": "$.promo_discount",
+        "target_path": "$.discount_amount",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-007",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "delivery_instruction": {
+          "type": "string"
+        },
+        "address_line_1": {
+          "type": "string"
+        },
+        "gate_code": {
+          "type": "string"
+        },
+        "leave_at_door": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "address_line_1",
+        "delivery_instruction"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "dropoff_note": {
+          "type": "string"
+        },
+        "address_line_1": {
+          "type": "string"
+        },
+        "gate_code": {
+          "type": "string"
+        },
+        "leave_at_door": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "address_line_1",
+        "dropoff_note"
+      ]
+    },
+    "diff_summary": "The delivery_instruction field for couriers was renamed to dropoff_note.",
+    "mapping": [
+      {
+        "source_path": "$.dropoff_note",
+        "target_path": "$.delivery_instruction",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-008",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "buyer_notes": {
+          "type": "string"
+        },
+        "order_reference": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "gift_wrap": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "order_reference",
+        "buyer_notes"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "customer_comment": {
+          "type": "string"
+        },
+        "order_reference": {
+          "type": "string"
+        },
+        "priority": {
+          "type": "string"
+        },
+        "gift_wrap": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "order_reference",
+        "customer_comment"
+      ]
+    },
+    "diff_summary": "The buyer_notes field entered during checkout was renamed to customer_comment.",
+    "mapping": [
+      {
+        "source_path": "$.customer_comment",
+        "target_path": "$.buyer_notes",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-009",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "package_weight": {
+          "type": "number"
+        },
+        "weight_unit": {
+          "type": "string"
+        },
+        "box_size": {
+          "type": "string"
+        },
+        "hazardous_material": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "package_weight",
+        "weight_unit"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "gross_weight": {
+          "type": "number"
+        },
+        "weight_unit": {
+          "type": "string"
+        },
+        "box_size": {
+          "type": "string"
+        },
+        "hazardous_material": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "gross_weight",
+        "weight_unit"
+      ]
+    },
+    "diff_summary": "The package_weight metric was renamed to gross_weight in parcel specifications.",
+    "mapping": [
+      {
+        "source_path": "$.gross_weight",
+        "target_path": "$.package_weight",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-010",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "cancellation_reason": {
+          "type": "string"
+        },
+        "order_status": {
+          "type": "string"
+        },
+        "cancelled_by": {
+          "type": "string"
+        },
+        "refund_eligible": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "order_status",
+        "cancellation_reason"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "void_reason": {
+          "type": "string"
+        },
+        "order_status": {
+          "type": "string"
+        },
+        "cancelled_by": {
+          "type": "string"
+        },
+        "refund_eligible": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "order_status",
+        "void_reason"
+      ]
+    },
+    "diff_summary": "The cancellation_reason explanation was renamed to void_reason.",
+    "mapping": [
+      {
+        "source_path": "$.void_reason",
+        "target_path": "$.cancellation_reason",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-011",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "store_identifier": {
+          "type": "string"
+        },
+        "register_number": {
+          "type": "string"
+        },
+        "cashier_name": {
+          "type": "string"
+        },
+        "terminal_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "store_identifier",
+        "register_number"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "outlet_id": {
+          "type": "string"
+        },
+        "register_number": {
+          "type": "string"
+        },
+        "cashier_name": {
+          "type": "string"
+        },
+        "terminal_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "outlet_id",
+        "register_number"
+      ]
+    },
+    "diff_summary": "The physical store_identifier code was renamed to outlet_id.",
+    "mapping": [
+      {
+        "source_path": "$.outlet_id",
+        "target_path": "$.store_identifier",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-012",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "fulfillment_status": {
+          "type": "string"
+        },
+        "warehouse_code": {
+          "type": "string"
+        },
+        "batch_id": {
+          "type": "string"
+        },
+        "packed_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "warehouse_code",
+        "fulfillment_status"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "dispatch_state": {
+          "type": "string"
+        },
+        "warehouse_code": {
+          "type": "string"
+        },
+        "batch_id": {
+          "type": "string"
+        },
+        "packed_at": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "warehouse_code",
+        "dispatch_state"
+      ]
+    },
+    "diff_summary": "The fulfillment_status lifecycle state was renamed to dispatch_state.",
+    "mapping": [
+      {
+        "source_path": "$.dispatch_state",
+        "target_path": "$.fulfillment_status",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-013",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "shipping_city": {
+          "type": "string"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "buyer_name": {
+          "type": "string"
+        },
+        "shipping_state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "shipping_city"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "shipping_address": {
+          "type": "object",
+          "properties": {
+            "city": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "city"
+          ]
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "buyer_name": {
+          "type": "string"
+        },
+        "shipping_state": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "shipping_address"
+      ]
+    },
+    "diff_summary": "The shipping_city field is now nested inside shipping_address.city.",
+    "mapping": [
+      {
+        "source_path": "$.shipping_address.city",
+        "target_path": "$.shipping_city",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-014",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "billing_zip": {
+          "type": "string"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "payment_method": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "billing_zip"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "billing_address": {
+          "type": "object",
+          "properties": {
+            "postal_code": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "postal_code"
+          ]
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "payment_method": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "billing_address"
+      ]
+    },
+    "diff_summary": "The billing_zip field is now nested under billing_address.postal_code.",
+    "mapping": [
+      {
+        "source_path": "$.billing_address.postal_code",
+        "target_path": "$.billing_zip",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-015",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "tracking_number": {
+          "type": "string"
+        },
+        "courier": {
+          "type": "string"
+        },
+        "shipment_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "shipment_id",
+        "tracking_number"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "tracking": {
+          "type": "object",
+          "properties": {
+            "number": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "number"
+          ]
+        },
+        "courier": {
+          "type": "string"
+        },
+        "shipment_id": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "shipment_id",
+        "tracking"
+      ]
+    },
+    "diff_summary": "The tracking_number field was moved into the nested object tracking.number.",
+    "mapping": [
+      {
+        "source_path": "$.tracking.number",
+        "target_path": "$.tracking_number",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-016",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "recipient_email": {
+          "type": "string"
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "recipient_email"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "recipient": {
+          "type": "object",
+          "properties": {
+            "email": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "email"
+          ]
+        },
+        "full_name": {
+          "type": "string"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "phone": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "recipient"
+      ]
+    },
+    "diff_summary": "The recipient_email contact field was relocated under recipient.email.",
+    "mapping": [
+      {
+        "source_path": "$.recipient.email",
+        "target_path": "$.recipient_email",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-017",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "buyer_company": {
+          "type": "string"
+        },
+        "tax_id": {
+          "type": "string"
+        },
+        "account_tier": {
+          "type": "string"
+        },
+        "po_number": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "po_number",
+        "buyer_company"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "buyer": {
+          "type": "object",
+          "properties": {
+            "company_name": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "company_name"
+          ]
+        },
+        "tax_id": {
+          "type": "string"
+        },
+        "account_tier": {
+          "type": "string"
+        },
+        "po_number": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "po_number",
+        "buyer"
+      ]
+    },
+    "diff_summary": "The buyer_company organization attribute is now nested within buyer.company_name.",
+    "mapping": [
+      {
+        "source_path": "$.buyer.company_name",
+        "target_path": "$.buyer_company",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-018",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "order_currency": {
+          "type": "string"
+        },
+        "base_price": {
+          "type": "number"
+        },
+        "tax_rate": {
+          "type": "number"
+        },
+        "order_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "order_currency"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "pricing": {
+          "type": "object",
+          "properties": {
+            "currency": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "currency"
+          ]
+        },
+        "base_price": {
+          "type": "number"
+        },
+        "tax_rate": {
+          "type": "number"
+        },
+        "order_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "pricing"
+      ]
+    },
+    "diff_summary": "The order_currency code is now located inside the nested object pricing.currency.",
+    "mapping": [
+      {
+        "source_path": "$.pricing.currency",
+        "target_path": "$.order_currency",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-019",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "vendor": {
+          "type": "object",
+          "properties": {
+            "id": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "id"
+          ]
+        },
+        "item_sku": {
+          "type": "string"
+        },
+        "purchase_order": {
+          "type": "string"
+        },
+        "unit_cost": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "purchase_order",
+        "vendor"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "vendor_id": {
+          "type": "string"
+        },
+        "item_sku": {
+          "type": "string"
+        },
+        "purchase_order": {
+          "type": "string"
+        },
+        "unit_cost": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "purchase_order",
+        "vendor_id"
+      ]
+    },
+    "diff_summary": "The nested field vendor.id was flattened to the top-level property vendor_id.",
+    "mapping": [
+      {
+        "source_path": "$.vendor_id",
+        "target_path": "$.vendor.id",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-020",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "destination": {
+          "type": "object",
+          "properties": {
+            "country_code": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "country_code"
+          ]
+        },
+        "consignee": {
+          "type": "string"
+        },
+        "port_of_entry": {
+          "type": "string"
+        },
+        "customs_declaration": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "consignee",
+        "destination"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "destination_country": {
+          "type": "string"
+        },
+        "consignee": {
+          "type": "string"
+        },
+        "port_of_entry": {
+          "type": "string"
+        },
+        "customs_declaration": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "consignee",
+        "destination_country"
+      ]
+    },
+    "diff_summary": "The destination.country_code field is now flattened into destination_country at the root level.",
+    "mapping": [
+      {
+        "source_path": "$.destination_country",
+        "target_path": "$.destination.country_code",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-021",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "promotion": {
+          "type": "object",
+          "properties": {
+            "code": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "code"
+          ]
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "cart_id": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cart_id",
+        "promotion"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "promo_code": {
+          "type": "string"
+        },
+        "campaign_id": {
+          "type": "string"
+        },
+        "cart_id": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cart_id",
+        "promo_code"
+      ]
+    },
+    "diff_summary": "The nested voucher code promotion.code is now supplied as top-level promo_code.",
+    "mapping": [
+      {
+        "source_path": "$.promo_code",
+        "target_path": "$.promotion.code",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-022",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "schedule": {
+          "type": "object",
+          "properties": {
+            "slot_window": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "slot_window"
+          ]
+        },
+        "delivery_date": {
+          "type": "string"
+        },
+        "route_id": {
+          "type": "string"
+        },
+        "driver_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "delivery_date",
+        "schedule"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "delivery_slot": {
+          "type": "string"
+        },
+        "delivery_date": {
+          "type": "string"
+        },
+        "route_id": {
+          "type": "string"
+        },
+        "driver_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "delivery_date",
+        "delivery_slot"
+      ]
+    },
+    "diff_summary": "The schedule.slot_window field has been moved to root level as delivery_slot.",
+    "mapping": [
+      {
+        "source_path": "$.delivery_slot",
+        "target_path": "$.schedule.slot_window",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-023",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "sender_dept": {
+          "type": "string"
+        },
+        "facility_id": {
+          "type": "string"
+        },
+        "station_id": {
+          "type": "string"
+        },
+        "shift": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "facility_id",
+        "sender_dept"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "sender": {
+          "type": "object",
+          "properties": {
+            "department": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "department"
+          ]
+        },
+        "facility_id": {
+          "type": "string"
+        },
+        "station_id": {
+          "type": "string"
+        },
+        "shift": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "facility_id",
+        "sender"
+      ]
+    },
+    "diff_summary": "The sender_dept attribute is now nested inside sender.department.",
+    "mapping": [
+      {
+        "source_path": "$.sender.department",
+        "target_path": "$.sender_dept",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-024",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "member": {
+          "type": "object",
+          "properties": {
+            "tier_level": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "tier_level"
+          ]
+        },
+        "member_id": {
+          "type": "string"
+        },
+        "points_earned": {
+          "type": "integer"
+        },
+        "order_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "member"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "loyalty_tier": {
+          "type": "string"
+        },
+        "member_id": {
+          "type": "string"
+        },
+        "points_earned": {
+          "type": "integer"
+        },
+        "order_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "loyalty_tier"
+      ]
+    },
+    "diff_summary": "The member.tier_level field is now represented as root-level property loyalty_tier.",
+    "mapping": [
+      {
+        "source_path": "$.loyalty_tier",
+        "target_path": "$.member.tier_level",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-025",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "tax_amount": {
+          "type": "number"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "tax_rate": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "order_id",
+        "tax_amount"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "tax_amount": {
+          "type": "string"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "tax_rate": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "order_id",
+        "tax_amount"
+      ]
+    },
+    "diff_summary": "The tax_amount field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.tax_amount",
+        "target_path": "$.tax_amount",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-026",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "item_count": {
+          "type": "integer"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "batch_code": {
+          "type": "string"
+        },
+        "package_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "item_count"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "item_count": {
+          "type": "string"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "batch_code": {
+          "type": "string"
+        },
+        "package_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "item_count"
+      ]
+    },
+    "diff_summary": "The item_count field changed from an integer to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.item_count",
+        "target_path": "$.item_count",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-027",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "shipping_fee": {
+          "type": "number"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "carrier": {
+          "type": "string"
+        },
+        "service_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "shipping_fee"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "shipping_fee": {
+          "type": "string"
+        },
+        "order_id": {
+          "type": "string"
+        },
+        "carrier": {
+          "type": "string"
+        },
+        "service_type": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_id",
+        "shipping_fee"
+      ]
+    },
+    "diff_summary": "The shipping_fee field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.shipping_fee",
+        "target_path": "$.shipping_fee",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-028",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "line_item_quantity": {
+          "type": "integer"
+        },
+        "product_id": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "unit_measure": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "line_item_quantity"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "line_item_quantity": {
+          "type": "string"
+        },
+        "product_id": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "unit_measure": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_id",
+        "line_item_quantity"
+      ]
+    },
+    "diff_summary": "The line_item_quantity field changed from an integer to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.line_item_quantity",
+        "target_path": "$.line_item_quantity",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-029",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "discount_percentage": {
+          "type": "number"
+        },
+        "coupon_id": {
+          "type": "string"
+        },
+        "campaign_name": {
+          "type": "string"
+        },
+        "max_discount": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "coupon_id",
+        "discount_percentage"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "discount_percentage": {
+          "type": "string"
+        },
+        "coupon_id": {
+          "type": "string"
+        },
+        "campaign_name": {
+          "type": "string"
+        },
+        "max_discount": {
+          "type": "number"
+        }
+      },
+      "required": [
+        "coupon_id",
+        "discount_percentage"
+      ]
+    },
+    "diff_summary": "The discount_percentage field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.discount_percentage",
+        "target_path": "$.discount_percentage",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-030",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "subtotal_amount": {
+          "type": "number"
+        },
+        "cart_id": {
+          "type": "string"
+        },
+        "currency_code": {
+          "type": "string"
+        },
+        "customer_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cart_id",
+        "subtotal_amount"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "subtotal_amount": {
+          "type": "string"
+        },
+        "cart_id": {
+          "type": "string"
+        },
+        "currency_code": {
+          "type": "string"
+        },
+        "customer_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "cart_id",
+        "subtotal_amount"
+      ]
+    },
+    "diff_summary": "The subtotal_amount field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.subtotal_amount",
+        "target_path": "$.subtotal_amount",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-031",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "package_count": {
+          "type": "integer"
+        },
+        "consignment_id": {
+          "type": "string"
+        },
+        "pallet_number": {
+          "type": "string"
+        },
+        "manifest_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "consignment_id",
+        "package_count"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "package_count": {
+          "type": "string"
+        },
+        "consignment_id": {
+          "type": "string"
+        },
+        "pallet_number": {
+          "type": "string"
+        },
+        "manifest_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "consignment_id",
+        "package_count"
+      ]
+    },
+    "diff_summary": "The package_count field changed from an integer to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.package_count",
+        "target_path": "$.package_count",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-032",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "customs_duty": {
+          "type": "number"
+        },
+        "declaration_number": {
+          "type": "string"
+        },
+        "tariff_code": {
+          "type": "string"
+        },
+        "country_of_origin": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "declaration_number",
+        "customs_duty"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "customs_duty": {
+          "type": "string"
+        },
+        "declaration_number": {
+          "type": "string"
+        },
+        "tariff_code": {
+          "type": "string"
+        },
+        "country_of_origin": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "declaration_number",
+        "customs_duty"
+      ]
+    },
+    "diff_summary": "The customs_duty field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.customs_duty",
+        "target_path": "$.customs_duty",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-033",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "points_applied": {
+          "type": "integer"
+        },
+        "reward_account": {
+          "type": "string"
+        },
+        "reward_program": {
+          "type": "string"
+        },
+        "redemption_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "redemption_id",
+        "points_applied"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "points_applied": {
+          "type": "string"
+        },
+        "reward_account": {
+          "type": "string"
+        },
+        "reward_program": {
+          "type": "string"
+        },
+        "redemption_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "redemption_id",
+        "points_applied"
+      ]
+    },
+    "diff_summary": "The points_applied field changed from an integer to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.points_applied",
+        "target_path": "$.points_applied",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-034",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "insurance_cost": {
+          "type": "number"
+        },
+        "policy_number": {
+          "type": "string"
+        },
+        "coverage_type": {
+          "type": "string"
+        },
+        "underwriter": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_number",
+        "insurance_cost"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "insurance_cost": {
+          "type": "string"
+        },
+        "policy_number": {
+          "type": "string"
+        },
+        "coverage_type": {
+          "type": "string"
+        },
+        "underwriter": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "policy_number",
+        "insurance_cost"
+      ]
+    },
+    "diff_summary": "The insurance_cost field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.insurance_cost",
+        "target_path": "$.insurance_cost",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-035",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "estimated_transit_hours": {
+          "type": "integer"
+        },
+        "origin_hub": {
+          "type": "string"
+        },
+        "destination_hub": {
+          "type": "string"
+        },
+        "transit_priority": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin_hub",
+        "estimated_transit_hours"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "estimated_transit_hours": {
+          "type": "string"
+        },
+        "origin_hub": {
+          "type": "string"
+        },
+        "destination_hub": {
+          "type": "string"
+        },
+        "transit_priority": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "origin_hub",
+        "estimated_transit_hours"
+      ]
+    },
+    "diff_summary": "The estimated_transit_hours field changed from an integer to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.estimated_transit_hours",
+        "target_path": "$.estimated_transit_hours",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-036",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-1",
+    "provider": "demo-orders-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "service_fee": {
+          "type": "number"
+        },
+        "platform_id": {
+          "type": "string"
+        },
+        "merchant_id": {
+          "type": "string"
+        },
+        "settlement_cycle": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform_id",
+        "service_fee"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "service_fee": {
+          "type": "string"
+        },
+        "platform_id": {
+          "type": "string"
+        },
+        "merchant_id": {
+          "type": "string"
+        },
+        "settlement_cycle": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "platform_id",
+        "service_fee"
+      ]
+    },
+    "diff_summary": "The service_fee field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.service_fee",
+        "target_path": "$.service_fee",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-037",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "payment_reference": {
+          "type": "string"
+        },
+        "gateway": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "created_timestamp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "payment_reference",
+        "status"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "transaction_ref": {
+          "type": "string"
+        },
+        "gateway": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        },
+        "created_timestamp": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "transaction_ref",
+        "status"
+      ]
+    },
+    "diff_summary": "The payment_reference identifier was renamed to transaction_ref.",
+    "mapping": [
+      {
+        "source_path": "$.transaction_ref",
+        "target_path": "$.payment_reference",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-038",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "card_expiration_month": {
+          "type": "integer"
+        },
+        "card_last4": {
+          "type": "string"
+        },
+        "card_brand": {
+          "type": "string"
+        },
+        "cardholder_name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "card_last4",
+        "card_expiration_month"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "expiry_month": {
+          "type": "integer"
+        },
+        "card_last4": {
+          "type": "string"
+        },
+        "card_brand": {
+          "type": "string"
+        },
+        "cardholder_name": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "card_last4",
+        "expiry_month"
+      ]
+    },
+    "diff_summary": "The credit card attribute card_expiration_month was renamed to expiry_month.",
+    "mapping": [
+      {
+        "source_path": "$.expiry_month",
+        "target_path": "$.card_expiration_month",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-039",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "merchant_account_id": {
+          "type": "string"
+        },
+        "payment_method": {
+          "type": "string"
+        },
+        "settlement_currency": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "merchant_account_id",
+        "payment_method"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "seller_id": {
+          "type": "string"
+        },
+        "payment_method": {
+          "type": "string"
+        },
+        "settlement_currency": {
+          "type": "string"
+        },
+        "channel": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "seller_id",
+        "payment_method"
+      ]
+    },
+    "diff_summary": "The merchant_account_id parameter was renamed to seller_id in settlement records.",
+    "mapping": [
+      {
+        "source_path": "$.seller_id",
+        "target_path": "$.merchant_account_id",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-040",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "refund_reason_code": {
+          "type": "string"
+        },
+        "charge_id": {
+          "type": "string"
+        },
+        "refund_id": {
+          "type": "string"
+        },
+        "initiated_by": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "refund_id",
+        "refund_reason_code"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "dispute_code": {
+          "type": "string"
+        },
+        "charge_id": {
+          "type": "string"
+        },
+        "refund_id": {
+          "type": "string"
+        },
+        "initiated_by": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "refund_id",
+        "dispute_code"
+      ]
+    },
+    "diff_summary": "The refund_reason_code attribute was renamed to dispute_code in refund responses.",
+    "mapping": [
+      {
+        "source_path": "$.dispute_code",
+        "target_path": "$.refund_reason_code",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-041",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "card_bin": {
+          "type": "string"
+        },
+        "payment_id": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "auth_code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "payment_id",
+        "card_bin"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "source": {
+          "type": "object",
+          "properties": {
+            "card_bin": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "card_bin"
+          ]
+        },
+        "payment_id": {
+          "type": "string"
+        },
+        "amount": {
+          "type": "number"
+        },
+        "auth_code": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "payment_id",
+        "source"
+      ]
+    },
+    "diff_summary": "The card_bin attribute was moved into the nested structure source.card_bin.",
+    "mapping": [
+      {
+        "source_path": "$.source.card_bin",
+        "target_path": "$.card_bin",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-042",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "risk_level": {
+          "type": "string"
+        },
+        "transaction_id": {
+          "type": "string"
+        },
+        "eval_time": {
+          "type": "string"
+        },
+        "decision": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "transaction_id",
+        "risk_level"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "fraud_check": {
+          "type": "object",
+          "properties": {
+            "risk_level": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "risk_level"
+          ]
+        },
+        "transaction_id": {
+          "type": "string"
+        },
+        "eval_time": {
+          "type": "string"
+        },
+        "decision": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "transaction_id",
+        "fraud_check"
+      ]
+    },
+    "diff_summary": "The risk_level score category is now nested under fraud_check.risk_level.",
+    "mapping": [
+      {
+        "source_path": "$.fraud_check.risk_level",
+        "target_path": "$.risk_level",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-043",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "bank": {
+          "type": "object",
+          "properties": {
+            "routing_identifier": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "routing_identifier"
+          ]
+        },
+        "account_suffix": {
+          "type": "string"
+        },
+        "mandate_id": {
+          "type": "string"
+        },
+        "clearing_house": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "mandate_id",
+        "bank"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "bank_code": {
+          "type": "string"
+        },
+        "account_suffix": {
+          "type": "string"
+        },
+        "mandate_id": {
+          "type": "string"
+        },
+        "clearing_house": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "mandate_id",
+        "bank_code"
+      ]
+    },
+    "diff_summary": "The nested routing field bank.routing_identifier is now surfaced as top-level bank_code.",
+    "mapping": [
+      {
+        "source_path": "$.bank_code",
+        "target_path": "$.bank.routing_identifier",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-044",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "processing": {
+          "type": "object",
+          "properties": {
+            "interchange_fee": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "interchange_fee"
+          ]
+        },
+        "payout_id": {
+          "type": "string"
+        },
+        "merchant_id": {
+          "type": "string"
+        },
+        "ledger_date": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "payout_id",
+        "processing"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "fee_amount": {
+          "type": "number"
+        },
+        "payout_id": {
+          "type": "string"
+        },
+        "merchant_id": {
+          "type": "string"
+        },
+        "ledger_date": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "payout_id",
+        "fee_amount"
+      ]
+    },
+    "diff_summary": "The processing.interchange_fee property was flattened to fee_amount in payout items.",
+    "mapping": [
+      {
+        "source_path": "$.fee_amount",
+        "target_path": "$.processing.interchange_fee",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-045",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "authorized_amount": {
+          "type": "number"
+        },
+        "auth_id": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "terminal_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "auth_id",
+        "authorized_amount"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "authorized_amount": {
+          "type": "string"
+        },
+        "auth_id": {
+          "type": "string"
+        },
+        "currency": {
+          "type": "string"
+        },
+        "terminal_id": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "auth_id",
+        "authorized_amount"
+      ]
+    },
+    "diff_summary": "The authorized_amount field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.authorized_amount",
+        "target_path": "$.authorized_amount",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-046",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "installments_count": {
+          "type": "integer"
+        },
+        "plan_id": {
+          "type": "string"
+        },
+        "issuer": {
+          "type": "string"
+        },
+        "tenure_months": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "plan_id",
+        "installments_count"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "installments_count": {
+          "type": "string"
+        },
+        "plan_id": {
+          "type": "string"
+        },
+        "issuer": {
+          "type": "string"
+        },
+        "tenure_months": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "plan_id",
+        "installments_count"
+      ]
+    },
+    "diff_summary": "The installments_count field changed from an integer to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.installments_count",
+        "target_path": "$.installments_count",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-047",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "refund_amount": {
+          "type": "number"
+        },
+        "refund_id": {
+          "type": "string"
+        },
+        "charge_id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "refund_id",
+        "refund_amount"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "refund_amount": {
+          "type": "string"
+        },
+        "refund_id": {
+          "type": "string"
+        },
+        "charge_id": {
+          "type": "string"
+        },
+        "reason": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "refund_id",
+        "refund_amount"
+      ]
+    },
+    "diff_summary": "The refund_amount field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.refund_amount",
+        "target_path": "$.refund_amount",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-048",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-2",
+    "provider": "demo-payments-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "risk_score": {
+          "type": "integer"
+        },
+        "eval_id": {
+          "type": "string"
+        },
+        "model_version": {
+          "type": "string"
+        },
+        "flagged": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "eval_id",
+        "risk_score"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "risk_score": {
+          "type": "string"
+        },
+        "eval_id": {
+          "type": "string"
+        },
+        "model_version": {
+          "type": "string"
+        },
+        "flagged": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "eval_id",
+        "risk_score"
+      ]
+    },
+    "diff_summary": "The risk_score field changed from an integer to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.risk_score",
+        "target_path": "$.risk_score",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-049",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "warehouse_identifier": {
+          "type": "string"
+        },
+        "aisle": {
+          "type": "string"
+        },
+        "shelf": {
+          "type": "string"
+        },
+        "bin": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "warehouse_identifier",
+        "aisle"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "facility_code": {
+          "type": "string"
+        },
+        "aisle": {
+          "type": "string"
+        },
+        "shelf": {
+          "type": "string"
+        },
+        "bin": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "facility_code",
+        "aisle"
+      ]
+    },
+    "diff_summary": "The warehouse_identifier location code was renamed to facility_code.",
+    "mapping": [
+      {
+        "source_path": "$.facility_code",
+        "target_path": "$.warehouse_identifier",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-050",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "stock_level": {
+          "type": "integer"
+        },
+        "product_sku": {
+          "type": "string"
+        },
+        "lot_number": {
+          "type": "string"
+        },
+        "unit_of_measure": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_sku",
+        "stock_level"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "available_quantity": {
+          "type": "integer"
+        },
+        "product_sku": {
+          "type": "string"
+        },
+        "lot_number": {
+          "type": "string"
+        },
+        "unit_of_measure": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "product_sku",
+        "available_quantity"
+      ]
+    },
+    "diff_summary": "The stock_level inventory count was renamed to available_quantity.",
+    "mapping": [
+      {
+        "source_path": "$.available_quantity",
+        "target_path": "$.stock_level",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-051",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "restock_threshold": {
+          "type": "integer"
+        },
+        "item_id": {
+          "type": "string"
+        },
+        "lead_time_days": {
+          "type": "integer"
+        },
+        "preferred_supplier": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "item_id",
+        "restock_threshold"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "reorder_point": {
+          "type": "integer"
+        },
+        "item_id": {
+          "type": "string"
+        },
+        "lead_time_days": {
+          "type": "integer"
+        },
+        "preferred_supplier": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "item_id",
+        "reorder_point"
+      ]
+    },
+    "diff_summary": "The inventory replenishment parameter restock_threshold was renamed to reorder_point.",
+    "mapping": [
+      {
+        "source_path": "$.reorder_point",
+        "target_path": "$.restock_threshold",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-052",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "field_renamed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "expiry_date": {
+          "type": "string"
+        },
+        "batch_number": {
+          "type": "string"
+        },
+        "manufacture_date": {
+          "type": "string"
+        },
+        "storage_condition": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "batch_number",
+        "expiry_date"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "expiration_date": {
+          "type": "string"
+        },
+        "batch_number": {
+          "type": "string"
+        },
+        "manufacture_date": {
+          "type": "string"
+        },
+        "storage_condition": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "batch_number",
+        "expiration_date"
+      ]
+    },
+    "diff_summary": "The perishable goods timestamp expiry_date was renamed to expiration_date.",
+    "mapping": [
+      {
+        "source_path": "$.expiration_date",
+        "target_path": "$.expiry_date",
+        "operation": "rename"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-053",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "shelf_section": {
+          "type": "string"
+        },
+        "sku": {
+          "type": "string"
+        },
+        "zone": {
+          "type": "string"
+        },
+        "barcode": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sku",
+        "shelf_section"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "location": {
+          "type": "object",
+          "properties": {
+            "shelf_section": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "shelf_section"
+          ]
+        },
+        "sku": {
+          "type": "string"
+        },
+        "zone": {
+          "type": "string"
+        },
+        "barcode": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "sku",
+        "location"
+      ]
+    },
+    "diff_summary": "The shelf_section aisle coordinate is now nested within location.shelf_section.",
+    "mapping": [
+      {
+        "source_path": "$.location.shelf_section",
+        "target_path": "$.shelf_section",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-054",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "package_volume": {
+          "type": "number"
+        },
+        "pallet_id": {
+          "type": "string"
+        },
+        "weight_kg": {
+          "type": "number"
+        },
+        "stackable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pallet_id",
+        "package_volume"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "dimensions": {
+          "type": "object",
+          "properties": {
+            "volume_cubic_meters": {
+              "type": "number"
+            }
+          },
+          "required": [
+            "volume_cubic_meters"
+          ]
+        },
+        "pallet_id": {
+          "type": "string"
+        },
+        "weight_kg": {
+          "type": "number"
+        },
+        "stackable": {
+          "type": "boolean"
+        }
+      },
+      "required": [
+        "pallet_id",
+        "dimensions"
+      ]
+    },
+    "diff_summary": "The package_volume measurement is now nested under dimensions.volume_cubic_meters.",
+    "mapping": [
+      {
+        "source_path": "$.dimensions.volume_cubic_meters",
+        "target_path": "$.package_volume",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-055",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "supplier": {
+          "type": "object",
+          "properties": {
+            "catalog_number": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "catalog_number"
+          ]
+        },
+        "internal_sku": {
+          "type": "string"
+        },
+        "supplier_name": {
+          "type": "string"
+        },
+        "moq": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "internal_sku",
+        "supplier"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "supplier_sku": {
+          "type": "string"
+        },
+        "internal_sku": {
+          "type": "string"
+        },
+        "supplier_name": {
+          "type": "string"
+        },
+        "moq": {
+          "type": "integer"
+        }
+      },
+      "required": [
+        "internal_sku",
+        "supplier_sku"
+      ]
+    },
+    "diff_summary": "The supplier.catalog_number property is now delivered as root attribute supplier_sku.",
+    "mapping": [
+      {
+        "source_path": "$.supplier_sku",
+        "target_path": "$.supplier.catalog_number",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-056",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "field_moved_or_nested",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "quality_control": {
+          "type": "object",
+          "properties": {
+            "defect_reason": {
+              "type": "string"
+            }
+          },
+          "required": [
+            "defect_reason"
+          ]
+        },
+        "inspection_id": {
+          "type": "string"
+        },
+        "inspector_badge": {
+          "type": "string"
+        },
+        "quarantine_status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "inspection_id",
+        "quality_control"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "quarantine_reason": {
+          "type": "string"
+        },
+        "inspection_id": {
+          "type": "string"
+        },
+        "inspector_badge": {
+          "type": "string"
+        },
+        "quarantine_status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "inspection_id",
+        "quarantine_reason"
+      ]
+    },
+    "diff_summary": "The nested defect property quality_control.defect_reason is now flattened into quarantine_reason.",
+    "mapping": [
+      {
+        "source_path": "$.quarantine_reason",
+        "target_path": "$.quality_control.defect_reason",
+        "operation": "path_remap"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-057",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "on_hand_units": {
+          "type": "integer"
+        },
+        "item_sku": {
+          "type": "string"
+        },
+        "bin_location": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "item_sku",
+        "on_hand_units"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "on_hand_units": {
+          "type": "string"
+        },
+        "item_sku": {
+          "type": "string"
+        },
+        "bin_location": {
+          "type": "string"
+        },
+        "status": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "item_sku",
+        "on_hand_units"
+      ]
+    },
+    "diff_summary": "The on_hand_units field changed from an integer to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.on_hand_units",
+        "target_path": "$.on_hand_units",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-058",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "unit_cost_usd": {
+          "type": "number"
+        },
+        "part_number": {
+          "type": "string"
+        },
+        "supplier_code": {
+          "type": "string"
+        },
+        "valuation_method": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "part_number",
+        "unit_cost_usd"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "unit_cost_usd": {
+          "type": "string"
+        },
+        "part_number": {
+          "type": "string"
+        },
+        "supplier_code": {
+          "type": "string"
+        },
+        "valuation_method": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "part_number",
+        "unit_cost_usd"
+      ]
+    },
+    "diff_summary": "The unit_cost_usd field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.unit_cost_usd",
+        "target_path": "$.unit_cost_usd",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-059",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "reserved_units": {
+          "type": "integer"
+        },
+        "order_allocation_id": {
+          "type": "string"
+        },
+        "warehouse_id": {
+          "type": "string"
+        },
+        "priority_level": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_allocation_id",
+        "reserved_units"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "reserved_units": {
+          "type": "string"
+        },
+        "order_allocation_id": {
+          "type": "string"
+        },
+        "warehouse_id": {
+          "type": "string"
+        },
+        "priority_level": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "order_allocation_id",
+        "reserved_units"
+      ]
+    },
+    "diff_summary": "The reserved_units field changed from an integer to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.reserved_units",
+        "target_path": "$.reserved_units",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  },
+  {
+    "id": "synthetic-fix-060",
+    "record_origin": "synthetic_generated",
+    "user_id": "demo-user-3",
+    "provider": "demo-inventory-api",
+    "change_type": "type_changed",
+    "schema_format": "json_schema",
+    "expected_schema": {
+      "type": "object",
+      "properties": {
+        "weight_per_unit_kg": {
+          "type": "number"
+        },
+        "catalog_id": {
+          "type": "string"
+        },
+        "material_type": {
+          "type": "string"
+        },
+        "packaging_class": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "catalog_id",
+        "weight_per_unit_kg"
+      ]
+    },
+    "observed_schema": {
+      "type": "object",
+      "properties": {
+        "weight_per_unit_kg": {
+          "type": "string"
+        },
+        "catalog_id": {
+          "type": "string"
+        },
+        "material_type": {
+          "type": "string"
+        },
+        "packaging_class": {
+          "type": "string"
+        }
+      },
+      "required": [
+        "catalog_id",
+        "weight_per_unit_kg"
+      ]
+    },
+    "diff_summary": "The weight_per_unit_kg field changed from a number to a string; the values are numeric strings that can be safely converted.",
+    "mapping": [
+      {
+        "source_path": "$.weight_per_unit_kg",
+        "target_path": "$.weight_per_unit_kg",
+        "operation": "parse_number_if_valid"
+      }
+    ],
+    "status": "approved",
+    "outcome": "verified",
+    "verification_method": "synthetic_fixture"
+  }
+]
