@@ -27,22 +27,6 @@ function downloadFile(name, content, type) {
   URL.revokeObjectURL(url)
 }
 
-const csvCell = (v) => {
-  const s = v === null || v === undefined ? '' : String(v)
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s
-}
-
-function exportCsv(rows, range) {
-  const header = ['Date', 'Monitor', 'Type', 'Severity', 'Status', 'Diagnosis', 'Action taken', 'Post-check', 'Duration (min)']
-  const lines = rows.map((r) => [
-    new Date(r.openedAt).toISOString(), r.monitorName, r.type, r.severity, r.status, r.diagnosis,
-    r.action ? `${r.action.kind} (${r.action.status})` : '',
-    r.postCheck === null ? '' : r.postCheck ? 'pass' : 'fail',
-    r.durationMinutes ?? '',
-  ].map(csvCell).join(','))
-  downloadFile(`setu-report-${range}.csv`, [header.join(','), ...lines].join('\n'), 'text/csv')
-}
-
 // ---------- Recovery effectiveness chart (intelligent vs static) ----------
 
 function EffectivenessChart({ effectiveness }) {
@@ -147,9 +131,6 @@ function ReportsPanel() {
               </button>
             ))}
           </div>
-          <button type="button" className="btn-secondary disabled:opacity-50" disabled={!report?.history.length} onClick={() => exportCsv(report.history, range)}>
-            Export report (CSV)
-          </button>
         </div>
       </div>
 
