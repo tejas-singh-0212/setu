@@ -46,9 +46,22 @@ function exportCsv(rows, range) {
 // ---------- Recovery effectiveness chart (intelligent vs static) ----------
 
 function EffectivenessChart({ effectiveness }) {
+  // No executed recovery actions in this range → show an honest empty state
+  // instead of the fixed benchmark values (they looked like mock data).
+  if (effectiveness.intelligentBasis !== 'measured') {
+    return (
+      <div className="rounded-xl border border-dashed border-slate-200 p-8 text-center">
+        <p className="text-sm font-semibold text-ink">No measured effectiveness yet</p>
+        <p className="text-xs text-muted mt-1.5 max-w-md mx-auto">
+          Approve a recovery action from an incident — after its post-check runs, this
+          chart fills with real pass/fail results for the selected range.
+        </p>
+      </div>
+    )
+  }
   const bars = [
     { label: 'Intelligent recovery', value: effectiveness.intelligent, className: 'fill-brand' },
-    { label: 'Static rules', value: effectiveness.static, className: 'fill-slate-400' },
+    { label: 'Static rules (reference)', value: effectiveness.static, className: 'fill-slate-400' },
   ]
   const X0 = 170
   const X1 = 700

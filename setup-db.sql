@@ -354,13 +354,10 @@ INSERT INTO DependencyCheck (id, monitor_id, at, dns_ok, ssl_issuer, ssl_expires
   ('00000000-0000-0000-0000-000000000021', '00000000-0000-0000-0000-000000000005', NOW(), true, 'DigiCert', NOW() + INTERVAL '84 days', 84, '{"hosts":["www.wikipedia.org"],"addresses":["208.80.154.224"]}'::jsonb, false)
 ON CONFLICT (id) DO NOTHING;
 
--- Recommendations (context.md §5.9) — owned by the demo account
-INSERT INTO Recommendation (id, monitor_id, user_id, title, why, action, source, status) VALUES
-  ('00000000-0000-0000-0000-000000000022', '00000000-0000-0000-0000-000000000003', '00000000-0000-0000-0000-000000000001', 'Add retry with exponential backoff to JSONPlaceholder monitor', '12 slow calls this week; 3 recovered by retry in similar past incidents (RAG ×5)', '{"kind":"retry","retries":2,"backoff":"exponential"}'::jsonb, 'telemetry', 'open'),
-  ('00000000-0000-0000-0000-000000000023', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'Bake capital_city remap into the transform permanently', '2nd drift this month on the same field', '{"kind":"transform","fix":"capital→capital_city"}'::jsonb, 'rag', 'open'),
-  ('00000000-0000-0000-0000-000000000024', NULL, '00000000-0000-0000-0000-000000000001', 'Extend website probe interval to 2 minutes', '0 anomalies on website monitors in 7 days; cuts noise', '{"kind":"interval","minutes":120}'::jsonb, 'telemetry', 'open'),
-  ('00000000-0000-0000-0000-000000000025', '00000000-0000-0000-0000-000000000002', '00000000-0000-0000-0000-000000000001', 'Renew SSL certificate for restcountries.com', 'Expires in 12 days (from dependencies)', '{"kind":"ssl_renew"}'::jsonb, 'dependency', 'open')
-ON CONFLICT (id) DO NOTHING;
+-- Recommendations are NOT seeded here: the service derives each account's
+-- cards from that account's own monitors/incidents/dependency checks on
+-- first list (services/recommendations.js → buildFor), so no two accounts
+-- share the same set.
 
 -- Schema versions + change + mapping fix (REST Countries drift story)
 -- schema_json uses typed objects so the diff screen can show type changes.
