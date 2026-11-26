@@ -1,0 +1,30 @@
+# Secrets
+.env
+.env.*
+!.env.example
+
+# Python virtual environments
+.venv/
+venv/
+env/
+
+# Python and test caches
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Local ChromaDB index (can be rebuilt)
+chroma_db/
+
+# Test coverage and logs
+.coverage
+coverage.xml
+htmlcov/
+*.log
+
+# Operating-system files
+.DS_Store
+Thumbs.db
+
+# Personal VS Code settings
+.vscode/
