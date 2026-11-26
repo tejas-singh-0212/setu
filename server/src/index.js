@@ -16,6 +16,12 @@ const errorHandler = require('./middleware/errorHandler')
 const app = express()
 const PORT = process.env.PORT || 4000
 
+// One failed async request must not take the whole backend down (Express 4
+// does not catch rejected promises from async routes on its own).
+process.on('unhandledRejection', (reason) => {
+  console.error('Unhandled rejection (server kept alive):', (reason && reason.stack) || reason)
+})
+
 // ---------- Middleware ----------
 app.use(express.json())
 

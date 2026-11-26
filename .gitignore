@@ -40,9 +40,4 @@ docker-compose.yml
 # OAuth token caches and temp files
 token*.json
 
-PART1_CHECKLIST.md
-PART1_IMPLEMENTATION_PLAN.md
-SESSION_SUMMARY.md
-LAST_SUMMARY
 .playwright-mcp/
-part1.md
