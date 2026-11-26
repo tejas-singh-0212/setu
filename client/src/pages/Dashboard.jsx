@@ -157,9 +157,9 @@ export default function Dashboard() {
         </StatCard>
       </div>
 
-      <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 2xl:grid-cols-3 gap-6">
         {/* Monitors table */}
-        <section className="xl:col-span-2 card !p-0 overflow-hidden">
+        <section className="2xl:col-span-2 card !p-0 overflow-hidden min-w-0">
           <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
             <h2 className="font-bold text-ink">Monitors</h2>
             <div className="flex gap-1.5" role="group" aria-label="Filter by type">
@@ -224,8 +224,8 @@ export default function Dashboard() {
           </div>
         </section>
 
-        {/* Right column */}
-        <div className="space-y-6">
+        {/* Right column (stacks under the table below 2xl) */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 2xl:grid-cols-1 gap-6 content-start">
           {/* Incident feed */}
           <section className="card !p-0">
             <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
@@ -290,7 +290,13 @@ export default function Dashboard() {
                       {d.sslDaysLeft != null && d.sslDaysLeft <= 14 ? `SSL expires in ${d.sslDaysLeft} days` : d.dnsOk === false ? 'DNS resolution failed' : 'Rate limited'}
                     </p>
                   </div>
-                  <span className={d.sslDaysLeft <= 3 ? 'pill-bad' : 'pill-warn'}>{d.sslDaysLeft}d</span>
+                  {d.sslDaysLeft != null && d.sslDaysLeft <= 14 ? (
+                    <span className={d.sslDaysLeft <= 3 ? 'pill-bad' : 'pill-warn'}>{d.sslDaysLeft}d</span>
+                  ) : d.dnsOk === false ? (
+                    <span className="pill-bad">DNS</span>
+                  ) : (
+                    <span className="pill-warn">Throttled</span>
+                  )}
                 </div>
               ))}
               {((deps?.warnings || 0) === 0) && (

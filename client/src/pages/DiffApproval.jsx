@@ -375,6 +375,9 @@ export default function DiffApproval() {
         </div>
       </div>
 
+      {/* Space so the fixed action bar never covers the last cards */}
+      <div className="h-24" aria-hidden="true" />
+
       {/* Bottom action bar */}
       <div className="fixed bottom-4 left-64 right-0 z-40 px-4">
         <div className="max-w-5xl mx-auto bg-surface border border-slate-200 rounded-xl shadow-lg px-5 py-3 flex flex-wrap items-center justify-between gap-3">

@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { Check } from 'lucide-react'
 
 function GoogleIcon() {
   return (
@@ -42,21 +43,27 @@ export default function Login() {
     <div className="min-h-screen grid lg:grid-cols-2 bg-cream" data-page="login">
       {/* Left — brand panel */}
       <div className="hidden lg:flex flex-col justify-between p-12 bg-brand text-white">
-        <div className="flex items-baseline gap-2">
-          <span className="text-3xl font-bold">Setu</span>
-          <span className="pill-neutral !bg-white/15 !text-white text-[10px] uppercase tracking-wider">Prod</span>
-        </div>
+        <img src="/logo.svg" alt="Setu — self-healing API integration" className="w-36 h-36 rounded-2xl shadow-lg shadow-ink/20" />
         <div>
-          <h1 className="text-4xl xl:text-5xl font-bold leading-tight max-w-md">
+          <h2 className="text-4xl xl:text-5xl font-bold tracking-tight leading-tight max-w-md">
             Reliable systems.<br />Automated maintenance.
-          </h1>
+          </h2>
           <p className="mt-4 text-white/80 max-w-md">
             Monitor websites &amp; REST APIs, catch failures early, recover safely — with a complete incident history.
           </p>
           <ul className="mt-8 space-y-3 text-sm text-white/90">
-            <li className="flex items-center gap-2"><span className="text-white/60">✓</span> Live probes, anomaly detection &amp; dependency health</li>
-            <li className="flex items-center gap-2"><span className="text-white/60">✓</span> LLM diagnosis with RAG over past incidents</li>
-            <li className="flex items-center gap-2"><span className="text-white/60">✓</span> Approval-gated recovery with post-checks</li>
+            {[
+              'Live probes, anomaly detection & dependency health',
+              'LLM diagnosis with RAG over past incidents',
+              'Approval-gated recovery with post-checks',
+            ].map((t) => (
+              <li key={t} className="flex items-center gap-3">
+                <span className="w-5 h-5 rounded-full bg-white/15 flex items-center justify-center shrink-0" aria-hidden="true">
+                  <Check size={12} strokeWidth={3} />
+                </span>
+                {t}
+              </li>
+            ))}
           </ul>
         </div>
         <p className="text-xs text-white/60">Demo target · REST Countries API</p>
@@ -64,12 +71,10 @@ export default function Login() {
 
       {/* Right — sign-in card */}
       <div className="flex items-center justify-center p-6">
-        <div className="bg-white rounded-2xl p-8 w-full max-w-md shadow-md border border-slate-200">
-          <div className="lg:hidden flex items-center justify-center gap-2 mb-6">
-            <span className="text-2xl font-bold text-brand">Setu</span>
-          </div>
+        <div className="bg-surface rounded-2xl p-8 sm:p-10 w-full max-w-md shadow-pop border border-slate-200">
+          <img src="/logo-mark.svg" alt="Setu" className="w-12 h-12 rounded-xl mb-6" />
 
-          <h1 className="text-3xl font-bold text-ink mb-1">Welcome to Setu</h1>
+          <h1 className="text-3xl font-bold tracking-tight text-ink mb-1">Welcome to Setu</h1>
           <p className="text-slate-500 mb-8">Sign in to your maintenance workspace</p>
 
           {checking ? (
