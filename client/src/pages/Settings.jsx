@@ -279,6 +279,15 @@ export default function Settings() {
                 <p className="text-xs text-muted mt-1">
                   RAG index: {embeddings === null ? 'count unavailable' : `${Number(embeddings).toLocaleString()} embeddings`} (pgvector)
                 </p>
+                {llm?.ragPipeline && (
+                  <p className="text-xs text-muted mt-1">
+                    RAG pipeline: {
+                      llm.ragPipeline.available
+                        ? `healthy · ${llm.ragPipeline.indexedFixes ?? '?'} schema fixes indexed (Chroma)`
+                        : 'offline — schema-fix suggestions fall back to built-ins'
+                    }
+                  </p>
+                )}
               </div>
               <Toggle checked={!!draft.ragEnabled} onChange={toggleRag} disabled={ragSaving} label="Use RAG context" />
             </div>

@@ -8,6 +8,11 @@ from groq import Groq
 from pydantic import BaseModel, ConfigDict, Field
 
 
+# Central env first: the Express app keeps its config in server/.env
+# (DATABASE_URL, GROQ_*, ...). python-dotenv never overrides variables that
+# are already set, so the central file wins; rag_pipeline/.env remains as an
+# optional local fallback for running this service standalone.
+load_dotenv(Path(__file__).resolve().parents[1] / "server" / ".env")
 load_dotenv(Path(__file__).resolve().with_name(".env"))
 
 
