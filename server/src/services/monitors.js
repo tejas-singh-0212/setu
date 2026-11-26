@@ -4,6 +4,7 @@ const dns = require('dns').promises
 const net = require('net')
 const { Pool } = require('pg')
 const { query, execute } = require('../lib/db')
+const settingsSvc = require('./settings')
 
 // ---------- SSRF guard: monitor URLs must be public http(s) targets ----------
 // Probes fetch whatever URL is stored, so creation is the single choke point
@@ -116,8 +117,10 @@ async function create(userId, data) {
   }
   const url = await assertPublicUrl(data.url) // SSRF guard
 
+  // New monitors default to the user's Settings → Telemetry → probe interval
+  const defaultInterval = Number(await settingsSvc.getSetting('probeIntervalDefault', userId)) || 60
   const defaultData = {
-    interval_sec: data.intervalSec || 60,
+    interval_sec: data.intervalSec || defaultInterval || 60,
     timeout_ms: data.timeoutMs || 5000,
     retries: data.retries ?? 0,
     cache_enabled: data.cacheEnabled ?? false,
