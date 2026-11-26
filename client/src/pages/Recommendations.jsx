@@ -109,12 +109,6 @@ export default function Recommendations() {
           </div>
           <p className="text-slate-500 text-sm mt-1">Generated from telemetry, incidents and RAG knowledge base</p>
         </div>
-        {llm && (
-          <div className="text-right text-xs text-slate-400">
-            <p>{llm.model || 'Rules-only mode (no LLM key)'}</p>
-            <p className="mt-0.5">{llm.ragCount ?? 0} embeddings indexed</p>
-          </div>
-        )}
       </div>
 
       {!open.length ? (
