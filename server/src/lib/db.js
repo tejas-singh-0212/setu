@@ -14,6 +14,13 @@ const pool = new Pool({
   idleTimeout: 30000,
 })
 
+// An 'error' on an idle client (Supabase pooler dropping idle connections,
+// network blips) would otherwise be an unhandled event → process crash.
+// The pool discards the dead client and opens a fresh one on next query.
+pool.on('error', (err) => {
+  console.error('PG idle client error (recovered, not fatal):', err.message)
+})
+
 // Query helper
 async function query(text, params) {
   const client = await pool.connect()
