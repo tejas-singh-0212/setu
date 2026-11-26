@@ -5,6 +5,7 @@ const router = require('express').Router()
 const { requireAuth } = require('../middleware/auth')
 const llm = require('../services/llm')
 const rag = require('../services/rag')
+const ragPipeline = require('../services/ragPipeline')
 
 router.get('/status', requireAuth, async (req, res, next) => {
   try {
@@ -12,6 +13,7 @@ router.get('/status', requireAuth, async (req, res, next) => {
     const settings = require('../services/settings')
     const ragEnabled = (await settings.getSetting('ragEnabled', req.session.userId)) !== false
     const ragCount = await rag.count()
+    const ragPipelineStatus = await ragPipeline.status()
 
     res.json({
       configured,
@@ -23,6 +25,7 @@ router.get('/status', requireAuth, async (req, res, next) => {
       ragEnabled,
       ragCount,
       embeddings: ragCount,
+      ragPipeline: ragPipelineStatus,
     })
   } catch (e) { next(e) }
 })

@@ -5,6 +5,15 @@ const { requireAuth } = require('../middleware/auth')
 const { query } = require('../lib/db')
 const diagnosisSvc = require('../services/diagnosis')
 const recoverySvc = require('../services/recovery')
+const ragPipeline = require('../services/ragPipeline')
+
+// ChangeEvent.change_type → the pipeline's change_type vocabulary
+// (dataset values: field_renamed | field_moved_or_nested | type_changed).
+const RAG_CHANGE_TYPE = {
+  renamed: 'field_renamed',
+  type_changed: 'type_changed',
+  removed: 'field_moved_or_nested',
+}
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
 
@@ -121,6 +130,20 @@ router.get('/:id', requireAuth, async (req, res, next) => {
           detected: newV.rows[0] || null,
           mappingFixes: fixes.rows,
         }
+
+        // RAG pipeline suggestion (FastAPI + Chroma + Groq). Non-fatal: when
+        // the service is down the field is null and the client falls back to
+        // its built-in suggestions.
+        drift.suggestion = await ragPipeline.suggestFix(
+          {
+            changeId: ce.id,
+            changeType: RAG_CHANGE_TYPE[ce.change_type] || 'field_renamed',
+            diffSummary: `${incident.title}${incident.probable_cause ? `. ${incident.probable_cause}` : ''}`,
+            expectedSchema: (oldV.rows[0] && oldV.rows[0].schema_json) || {},
+            observedSchema: (newV.rows[0] && newV.rows[0].schema_json) || {},
+          },
+          req.session.userId
+        )
       }
     }
 

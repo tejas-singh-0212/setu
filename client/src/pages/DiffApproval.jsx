@@ -69,6 +69,29 @@ const CHANGE_PILL = {
 
 // ---------- suggested actions (spec §5.6) ----------
 
+// RAG pipeline suggestion (server-provided via /incidents/:id → drift.suggestion).
+// Returns [] whenever the pipeline is offline/abstained — the built-in
+// suggestions below remain as the fallback, so the page always works.
+function ragSuggestions(drift) {
+  const s = drift?.suggestion
+  if (!s || s.status !== 'suggested' || !Array.isArray(s.mappings) || !s.mappings.length) return []
+  const detectedId = drift?.detected?.id
+  const detail = s.mappings
+    .map((m) => `${m.source_path} → ${m.target_path} (${m.operation})`)
+    .join(' · ')
+  return [
+    {
+      key: 'rag-transform',
+      title: 'Apply RAG-suggested mapping',
+      detail: `${s.summary} — ${detail}`,
+      kind: 'transform',
+      payload: detectedId ? { versionId: detectedId, mappings: s.mappings, evidenceIds: s.retrieved_fix_ids } : {},
+      rag: true,
+      evidenceCount: s.retrieved_fix_ids?.length || 0,
+    },
+  ]
+}
+
 function suggestionsFor(drift) {
   const detectedId = drift?.detected?.id
   const expectedId = drift?.expected?.id
@@ -200,7 +223,7 @@ export default function DiffApproval() {
   const { incident, monitor, drift, actions } = detail
   const diagnosis = incident.diagnosis
   const rows = drift ? buildRows(drift.expected, drift.detected) : []
-  const suggestions = suggestionsFor(drift)
+  const suggestions = [...ragSuggestions(drift), ...suggestionsFor(drift)]
 
   return (
     <AppLayout dataPage="diff">
@@ -329,7 +352,13 @@ export default function DiffApproval() {
                 >
                   <span className="text-sm font-semibold text-ink">{s.title}</span>
                   <span className="block text-xs text-slate-500 mt-1 font-mono">{s.detail}</span>
-                  <span className="inline-block mt-2 pill-neutral">Dry-run first · post-check enabled</span>
+                  {s.rag ? (
+                    <span className="inline-block mt-2 pill-neutral">
+                      RAG · {s.evidenceCount} retrieved fix{s.evidenceCount === 1 ? '' : 'es'} · requires approval
+                    </span>
+                  ) : (
+                    <span className="inline-block mt-2 pill-neutral">Dry-run first · post-check enabled</span>
+                  )}
                 </button>
               ))}
             </div>
