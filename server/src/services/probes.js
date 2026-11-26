@@ -5,7 +5,9 @@ const path = require('path')
 const { query, execute, pool } = require('../lib/db')
 const anomaly = require('./anomaly')
 const dns = require('dns')
+const net = require('net')
 const tls = require('tls')
+const { safeFetch, guardedLookup } = require('../lib/netGuard')
 
 // Load afterProbe hooks (C2 contract): hooks/afterProbe/*.js
 // ctx = { monitor, probe, payload, pool }
@@ -29,20 +31,17 @@ const afterProbeHooks = loadAfterProbeHooks()
 // payloads (huge arrays, binary content) taking the process down.
 const MAX_PAYLOAD_BYTES = 1024 * 1024
 
-// Read and parse the response body so afterProbe hooks can diff the schema.
+// Parse the response body so afterProbe hooks can diff the schema.
 // Never throws: a missing, oversized or non-JSON body yields null, which hooks
 // must treat as "no payload available" rather than as a schema change.
-async function readPayload(response, monitor, ok) {
+function parsePayload(body, monitor, ok) {
   // Website probes return HTML, which carries no API schema worth diffing.
   if (monitor.type !== 'api') return null
   // An error response is not the contract we monitor; skip it so a 5xx body is
   // never mistaken for schema drift.
-  if (!ok) return null
-
+  if (!ok || !body) return null
   try {
-    const text = await response.text()
-    if (!text || text.length > MAX_PAYLOAD_BYTES) return null
-    return JSON.parse(text)
+    return JSON.parse(body)
   } catch (e) {
     return null
   }
@@ -51,7 +50,7 @@ async function readPayload(response, monitor, ok) {
 async function runProbe(monitor) {
   const url = new URL(monitor.url)
   const hostname = url.hostname
-  const protocol = url.protocol.replace(':')
+  const protocol = url.protocol.replace(':', '')
 
   let statusCode, latencyMs, ok, error = '', schemaOk = true, dnsOk = true, sslDaysLeft = null
   let responsePayload = null
@@ -73,23 +72,19 @@ async function runProbe(monitor) {
 
   // HTTP/HTTPS request
   try {
-    const controller = new AbortController()
-    const timeoutId = setTimeout(() => controller.abort(), monitor.timeout_ms || 5000)
-
-    const response = await fetch(monitor.url, {
+    // SSRF-safe: every hop (redirects included) is re-validated and the
+    // resolved address is checked at connect time (DNS rebinding). The
+    // timeout covers headers AND body, so a stalled body is still aborted.
+    const response = await safeFetch(monitor.url, {
       method: monitor.method || 'GET',
-      signal: controller.signal,
-      redirect: 'follow',
+      timeoutMs: monitor.timeout_ms || 5000,
+      readBody: monitor.type === 'api',
+      maxBytes: MAX_PAYLOAD_BYTES,
     })
     statusCode = response.status
-    latencyMs = Date.now() - start
+    latencyMs = response.headersAt - start
     ok = statusCode < 400
-
-    // Read the body while the timeout is still armed: a response whose headers
-    // arrive quickly but whose body stalls must still be abortable.
-    responsePayload = await readPayload(response, monitor, ok)
-
-    clearTimeout(timeoutId)
+    responsePayload = parsePayload(response.body, monitor, ok)
 
     // SSL days left (for HTTPS)
     if (protocol === 'https') {
@@ -97,7 +92,9 @@ async function runProbe(monitor) {
         await new Promise((resolve, reject) => {
           const session = tls.connect({
             host: hostname,
-            port: 443,
+            port: Number(url.port) || 443,
+            servername: net.isIP(hostname) ? undefined : hostname,
+            lookup: guardedLookup,
             rejectUnauthorized: false,
           })
           session.on('secureConnect', () => {

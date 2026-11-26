@@ -57,27 +57,31 @@ function toLiteral(vec) {
   return `[${vec.join(',')}]`
 }
 
-// retrieve(query, k) → [{ id, kind, refId, content, score }] most similar first
-async function retrieve(text, k = 4) {
+// retrieve(query, k, userId) → [{ id, kind, refId, content, score }] most similar first.
+// Only shared knowledge rows (user_id NULL) and the caller's own rows are visible —
+// one account's fix history never leaks into another account's diagnosis.
+async function retrieve(text, k = 4, userId = null) {
   const vec = toLiteral(await embed(text))
   const { rows } = await query(
     `SELECT id, kind, ref_id AS "refId", content,
             1 - (vector <=> $1::vector) AS score
      FROM embedding
+     WHERE (kind = 'knowledge' AND user_id IS NULL) OR user_id = $3::uuid
      ORDER BY vector <=> $1::vector
      LIMIT $2`,
-    [vec, k]
+    [vec, k, userId]
   )
   return rows
 }
 
-// index(kind, refId, content) → inserts an embedding row
-async function index(kind, refId, content) {
+// index(kind, refId, content, userId) → inserts an embedding row
+// (userId null = shared knowledge, visible to every account).
+async function index(kind, refId, content, userId = null) {
   const vec = toLiteral(await embed(content))
   const { rows } = await query(
-    `INSERT INTO embedding (kind, ref_id, content, vector)
-     VALUES ($1, $2, $3, $4::vector) RETURNING id`,
-    [kind, refId || null, content, vec]
+    `INSERT INTO embedding (kind, ref_id, content, vector, user_id)
+     VALUES ($1, $2, $3, $4::vector, $5::uuid) RETURNING id`,
+    [kind, refId || null, content, vec, userId]
   )
   return rows[0]
 }

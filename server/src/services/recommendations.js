@@ -206,10 +206,21 @@ async function create({ monitorId = null, title, why, action = {}, source = 'tel
       throw e
     }
   }
+  if (typeof title !== 'string' || !title.trim() || typeof why !== 'string' || !why.trim()) {
+    const e = new Error('title and why must be non-empty strings')
+    e.status = 400
+    throw e
+  }
+  if (!['telemetry', 'dependency', 'rag', 'llm'].includes(source)) {
+    const e = new Error('Invalid source')
+    e.status = 400
+    throw e
+  }
+  if (!action || typeof action !== 'object' || Array.isArray(action)) action = {}
   const { rows } = await query(
     `INSERT INTO recommendation (monitor_id, user_id, title, why, action, source, status)
-     VALUES ($1, $2, $3, $4::jsonb, $5, 'open') RETURNING *`,
-    [monitorId, userId, title, why, JSON.stringify(action), source]
+     VALUES ($1, $2, $3, $4, $5::jsonb, $6, 'open') RETURNING *`,
+    [monitorId, userId, title.trim().slice(0, 500), why.trim(), JSON.stringify(action), source]
   )
   return toDto(rows[0])
 }

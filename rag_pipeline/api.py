@@ -1,4 +1,6 @@
+import hmac
 import logging
+import os
 from typing import Any, Dict, Literal, Optional
 
 from fastapi import FastAPI, Header, HTTPException
@@ -14,12 +16,30 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="Setu RAG Service")
 collection = open_collection()
 
+# Shared secret between the Express server and this service (server/.env,
+# loaded by llm_client on import). X-User-Id is only trustworthy when the
+# caller is our own backend, so when the token is set every suggestion
+# request must present it.
+SERVICE_TOKEN = os.getenv("RAG_SERVICE_TOKEN", "")
+if not SERVICE_TOKEN:
+    logger.warning(
+        "RAG_SERVICE_TOKEN is not set — suggestion endpoint is unauthenticated. "
+        "Keep this service bound to 127.0.0.1."
+    )
+
+
+def require_service_token(token: Optional[str]) -> None:
+    if not SERVICE_TOKEN:
+        return
+    if not token or not hmac.compare_digest(token, SERVICE_TOKEN):
+        raise HTTPException(status_code=401, detail="Unauthorized")
+
 
 class SchemaChangeRequest(BaseModel):
-    change_id: str = Field(min_length=1)
-    provider: Optional[str] = None
-    change_type: str
-    diff_summary: str
+    change_id: str = Field(min_length=1, max_length=200)
+    provider: Optional[str] = Field(default=None, max_length=200)
+    change_type: str = Field(max_length=100)
+    diff_summary: str = Field(max_length=4000)
     expected_schema: Dict[str, Any]
     observed_schema: Dict[str, Any]
 
@@ -49,7 +69,9 @@ def health():
 def suggest_fix(
     request: SchemaChangeRequest,
     user_id: str = Header(..., alias="X-User-Id"),
+    internal_token: Optional[str] = Header(None, alias="X-Internal-Token"),
 ):
+    require_service_token(internal_token)
     try:
         matches = retrieve_fixes(
             collection=collection,

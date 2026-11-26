@@ -13,4 +13,6 @@ fi
 # GROQ_API_KEY / GROQ_MODEL live there. Rebuild the index after dataset changes:
 #   python index_fixes.py
 
-exec uvicorn api:app --host 0.0.0.0 --port "${RAG_PORT:-8000}"
+# Bound to loopback: only the local Express server should reach this service.
+# Override with RAG_HOST only when you also set RAG_SERVICE_TOKEN.
+exec uvicorn api:app --host "${RAG_HOST:-127.0.0.1}" --port "${RAG_PORT:-8000}"
