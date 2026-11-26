@@ -186,9 +186,6 @@ export default function Settings() {
   const provider = user?.provider === 'github' ? 'GitHub' : 'Google'
   const initials = (user?.name || user?.email || '?').split(/\s+/).map((p) => p[0]).slice(0, 2).join('').toUpperCase()
   const embeddings = llm?.embeddings ?? llm?.ragIndexCount ?? llm?.embeddingCount ?? null
-  const modelName = llm?.model || LLM_FALLBACK.model
-  const endpoint = llm?.endpoint || LLM_FALLBACK.endpoint
-  const healthy = llm?.healthy ?? llm?.ok ?? null
 
   return (
     <AppLayout dataPage="settings">
@@ -256,38 +253,13 @@ export default function Settings() {
             subtitle="Central OSS model used for diagnosis narratives and maintenance recommendations."
             badge={<Pill variant="ai">LLM + RAG</Pill>}
           >
-            <dl className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="rounded-lg border border-slate-200 p-4">
-                <dt className="text-xs font-semibold text-muted uppercase">Model</dt>
-                <dd className="mt-2 flex flex-wrap items-center gap-2">
-                  <span className="text-sm font-semibold text-ink">{modelName}</span>
-                  {healthy === true && <Pill variant="ok">● healthy</Pill>}
-                  {healthy === false && <Pill variant="bad">● unreachable</Pill>}
-                  {healthy === null && <Pill variant="neutral">Status unavailable</Pill>}
-                </dd>
-                <p className="text-xs text-muted mt-1">Llama via free inference API</p>
-              </div>
-              <div className="rounded-lg border border-slate-200 p-4">
-                <dt className="text-xs font-semibold text-muted uppercase">Endpoint</dt>
-                <dd className="mt-2 font-mono text-sm text-ink break-all">{endpoint}</dd>
-                <p className="text-xs text-muted mt-1">Endpoint configured by administrator</p>
-              </div>
-            </dl>
-            <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 p-4 mt-4">
+            {/* Model & endpoint intentionally hidden from end users */}
+            <div className="flex items-center justify-between gap-4 rounded-lg border border-slate-200 p-4">
               <div>
                 <p className="text-sm font-semibold text-ink">Use past incidents &amp; fixes as RAG context</p>
                 <p className="text-xs text-muted mt-1">
                   RAG index: {embeddings === null ? 'count unavailable' : `${Number(embeddings).toLocaleString()} embeddings`} (pgvector)
                 </p>
-                {llm?.ragPipeline && (
-                  <p className="text-xs text-muted mt-1">
-                    RAG pipeline: {
-                      llm.ragPipeline.available
-                        ? `healthy · ${llm.ragPipeline.indexedFixes ?? '?'} schema fixes indexed (Chroma)`
-                        : 'offline — schema-fix suggestions fall back to built-ins'
-                    }
-                  </p>
-                )}
               </div>
               <Toggle checked={!!draft.ragEnabled} onChange={toggleRag} disabled={ragSaving} label="Use RAG context" />
             </div>
