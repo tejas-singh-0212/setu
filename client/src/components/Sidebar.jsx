@@ -44,7 +44,6 @@ export const Sidebar = ({ dataPage }) => {
         <Link to="/" className="flex items-center gap-2.5 rounded-lg -mx-1 px-1 py-1" aria-label="Setu — Dashboard">
           <img src="/logo-mark.svg" alt="" className="w-8 h-8 rounded-lg" />
           <span className="text-lg font-bold tracking-tight text-ink">Setu</span>
-          <span className="pill-neutral !text-[10px] !px-1.5 !py-0 uppercase tracking-wider">Prod</span>
         </Link>
       </div>
 
