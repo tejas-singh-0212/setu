@@ -1,6 +1,6 @@
 /* Inter font import + Tailwind directives */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap');
 @import './components.css';
 
 @tailwind base;
@@ -13,5 +13,13 @@ html {
 }
 
 body {
-  @apply bg-cream text-ink font-sans;
+  @apply bg-cream text-ink font-sans antialiased;
+  font-feature-settings: 'cv11', 'ss01';
+}
+
+/* Numbers in tables/stats line up */
+.tabular-nums,
+.table-base td,
+.stat-card {
+  font-variant-numeric: tabular-nums;
 }

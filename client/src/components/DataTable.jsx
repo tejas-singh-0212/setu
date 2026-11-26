@@ -1,14 +1,14 @@
-// DataTable — generic table component using .table-base
+// DataTable — generic table component using .table-base (scrolls horizontally when narrow)
 
 import React from 'react'
 
-export const DataTable = ({ columns, data }) => {
-  return (
+export const DataTable = ({ columns, data }) => (
+  <div className="overflow-x-auto">
     <table className="table-base">
       <thead>
         <tr>
           {columns.map((col) => (
-            <th key={col.key}>{col.label}</th>
+            <th key={col.key} scope="col">{col.label}</th>
           ))}
         </tr>
       </thead>
@@ -23,5 +23,5 @@ export const DataTable = ({ columns, data }) => {
         ))}
       </tbody>
     </table>
-  )
-}
+  </div>
+)

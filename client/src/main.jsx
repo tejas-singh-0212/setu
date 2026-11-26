@@ -1,6 +1,6 @@
 // main.jsx — React root
 
-import { createRoot } from 'react-dom'
+import { createRoot } from 'react-dom/client'
 import { Suspense } from 'react'
 import App from './App'
 import './styles/index.css'
