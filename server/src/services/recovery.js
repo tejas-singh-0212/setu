@@ -25,8 +25,9 @@ async function audit(entityId, action, actor, payload, userId) {
 // Ownership gate: an action/incident is reachable only through the user's own
 // monitor. Returns the row or throws a 404 (never reveals other users' rows).
 async function ownedAction(id, actor) {
+  if (typeof id !== 'string' || !UUID.test(id)) throw new RecoveryError('Recovery action not found', 404)
   const { rows } = await query(
-    `SELECT ra.*, m.user_id AS owner_id
+    `SELECT ra.*, m.user_id AS owner_id, i.monitor_id AS incident_monitor_id
      FROM recoveryaction ra
      LEFT JOIN incident i ON i.id = ra.incident_id
      LEFT JOIN monitor m ON m.id = i.monitor_id
@@ -48,10 +49,57 @@ async function addEvent(incidentId, kind, actor, payload) {
   )
 }
 
+const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+const TIMEOUT_BOUNDS = [1000, 30000]
+const RETRY_BOUNDS = [0, 5]
+
+async function assertUnderHourlyLimit(db, userId) {
+  const maxPerHour = Number((await settingsSvc.getSetting('maxRecoveryPerHour', userId)) ?? 3)
+  const recent = await db(
+    `SELECT COUNT(*)::int AS n FROM recoveryaction ra
+     JOIN incident i ON i.id = ra.incident_id
+     JOIN monitor m ON m.id = i.monitor_id
+     WHERE m.user_id = $1
+       AND ra.executed_at >= NOW() - INTERVAL '1 hour'
+       AND ra.status IN ('executed', 'verified', 'failed')`,
+    [userId]
+  )
+  if (recent.rows[0].n >= maxPerHour) {
+    throw new RecoveryError(`Recovery limit reached (${maxPerHour}/hour) — try again later`, 429)
+  }
+}
+
+function boundedInt(value, [min, max], name) {
+  const n = Number(value)
+  if (!Number.isInteger(n) || n < min || n > max) {
+    throw new RecoveryError(`${name} must be an integer between ${min} and ${max}`)
+  }
+  return n
+}
+
+// Validates the client payload and pins it to the incident's monitor.
+async function sanitizePayload(kind, payload, monitorId) {
+  if (!payload || typeof payload !== 'object' || Array.isArray(payload)) payload = {}
+  const body = { ...payload, monitorId }
+  if (payload.timeoutMs !== undefined) body.timeoutMs = boundedInt(payload.timeoutMs, TIMEOUT_BOUNDS, 'timeoutMs')
+  if (payload.retries !== undefined) body.retries = boundedInt(payload.retries, RETRY_BOUNDS, 'retries')
+  if (payload.versionId !== undefined && payload.versionId !== null) {
+    if (typeof payload.versionId !== 'string' || !UUID.test(payload.versionId)) {
+      throw new RecoveryError('Invalid versionId')
+    }
+    const v = await query(`SELECT id FROM schemaversion WHERE id = $1 AND monitor_id = $2`, [payload.versionId, monitorId])
+    if (!v.rows.length) throw new RecoveryError('Schema version not found', 404)
+  }
+  return body
+}
+
 // ---------- POST /api/recovery — propose (NEVER executes) ----------
 async function propose({ incidentId, kind, payload = {}, actor, userId = actor }) {
   if (!KINDS.includes(kind)) {
     throw new RecoveryError(`kind must be one of: ${KINDS.join(', ')}`)
+  }
+  if (typeof incidentId !== 'string' || !UUID.test(incidentId)) {
+    throw new RecoveryError('Incident not found', 404)
   }
 
   const incident = await query(
@@ -65,23 +113,13 @@ async function propose({ incidentId, kind, payload = {}, actor, userId = actor }
   }
   const inc = incident.rows[0]
 
-  // Safety limit: max executed recovery actions per hour, per user (429 past the limit)
-  const maxPerHour = Number((await settingsSvc.getSetting('maxRecoveryPerHour', userId)) ?? 3)
-  const recent = await query(
-    `SELECT COUNT(*)::int AS n FROM recoveryaction ra
-     JOIN incident i ON i.id = ra.incident_id
-     JOIN monitor m ON m.id = i.monitor_id
-     WHERE m.user_id = $1
-       AND ra.executed_at >= NOW() - INTERVAL '1 hour'
-       AND ra.status IN ('executed', 'verified')`,
-    [userId]
-  )
-  if (recent.rows[0].n >= maxPerHour) {
-    throw new RecoveryError(`Recovery limit reached (${maxPerHour}/hour) — try again later`, 429)
-  }
+  // Safety limit: max executed recovery actions per hour, per user (429 past the limit).
+  // Re-checked at approval time, which is where execution actually happens.
+  await assertUnderHourlyLimit(query, userId)
 
-  // Attach the monitor so execution can find it
-  const body = { ...payload, monitorId: payload.monitorId || inc.monitor_id }
+  // The action always targets the incident's own monitor — a client-supplied
+  // monitorId is never trusted (it could name another user's monitor).
+  const body = await sanitizePayload(kind, payload, inc.monitor_id)
 
   const inserted = await query(
     `INSERT INTO recoveryaction (incident_id, kind, payload, status, proposed_by)
@@ -103,11 +141,14 @@ async function propose({ incidentId, kind, payload = {}, actor, userId = actor }
 
 // ---------- POST /api/recovery/:id/approve — the human gate ----------
 async function approve(id, actor) {
+  if (typeof id !== 'string' || !UUID.test(id)) throw new RecoveryError('Recovery action not found', 404)
   const client = await pool.connect()
   try {
     await client.query('BEGIN')
+    // Serialise approvals per user so the hourly limit cannot be raced.
+    await client.query('SELECT pg_advisory_xact_lock(hashtext($1))', [`recovery-approve:${actor}`])
     const { rows } = await client.query(
-      `SELECT ra.*, m.user_id AS owner_id
+      `SELECT ra.*, m.user_id AS owner_id, i.monitor_id AS incident_monitor_id
        FROM recoveryaction ra
        LEFT JOIN incident i ON i.id = ra.incident_id
        LEFT JOIN monitor m ON m.id = i.monitor_id
@@ -125,6 +166,15 @@ async function approve(id, actor) {
       throw new RecoveryError(`Action is already ${action.status}`, 409)
     }
 
+    // Safety limit is enforced HERE (execution), not just at proposal time —
+    // otherwise many pending actions could be proposed and approved in bulk.
+    try {
+      await assertUnderHourlyLimit((text, params) => client.query(text, params), actor)
+    } catch (e) {
+      await client.query('ROLLBACK')
+      throw e
+    }
+
     // C6: approval first, execution only through this path
     await client.query(
       `UPDATE recoveryaction SET status = 'approved', approved_by = $2 WHERE id = $1`,
@@ -132,29 +182,35 @@ async function approve(id, actor) {
     )
 
     const payload = action.payload || {}
-    const monitorId = payload.monitorId || (action.incident_id
-      ? (await client.query(`SELECT monitor_id FROM incident WHERE id = $1`, [action.incident_id])).rows[0]?.monitor_id
-      : null)
+    // Always the incident's own (ownership-checked) monitor; payload.monitorId is never trusted.
+    const monitorId = action.incident_monitor_id || null
 
     let monitorRow = null
     if (monitorId) {
-      const m = await client.query(`SELECT * FROM monitor WHERE id = $1`, [monitorId])
+      const m = await client.query(`SELECT * FROM monitor WHERE id = $1 AND user_id = $2`, [monitorId, actor])
       monitorRow = m.rows[0] || null
     }
 
     // ----- execute the config action (Setu-controlled config only) -----
+    const clamp = (n, [min, max]) => Math.min(max, Math.max(min, Math.round(n)))
     if (action.kind === 'timeout' && monitorRow) {
-      const timeoutMs = Number(payload.timeoutMs) || Math.min(15000, (monitorRow.timeout_ms || 5000) + 5000)
+      const requested = Number(payload.timeoutMs)
+      const timeoutMs = Number.isFinite(requested) && requested > 0
+        ? clamp(requested, TIMEOUT_BOUNDS)
+        : Math.min(15000, (monitorRow.timeout_ms || 5000) + 5000)
       await client.query(`UPDATE monitor SET timeout_ms = $2 WHERE id = $1`, [monitorRow.id, timeoutMs])
     } else if (action.kind === 'retry' && monitorRow) {
-      const retries = Number(payload.retries) || Math.max(2, monitorRow.retries || 0)
+      const requested = Number(payload.retries)
+      const retries = Number.isFinite(requested) && requested > 0
+        ? clamp(requested, RETRY_BOUNDS)
+        : Math.max(2, monitorRow.retries || 0)
       await client.query(`UPDATE monitor SET retries = $2 WHERE id = $1`, [monitorRow.id, retries])
     } else if (action.kind === 'cache' && monitorRow) {
       await client.query(`UPDATE monitor SET cache_enabled = true WHERE id = $1`, [monitorRow.id])
     } else if ((action.kind === 'transform' || action.kind === 'mapping_rollback') && monitorRow) {
       // Roll the expected contract: promote newest detected/other version or the named one
       const target = payload.versionId
-        ? await client.query(`SELECT * FROM schemaversion WHERE id = $1`, [payload.versionId])
+        ? await client.query(`SELECT * FROM schemaversion WHERE id = $1 AND monitor_id = $2`, [payload.versionId, monitorRow.id])
         : await client.query(
             `SELECT * FROM schemaversion WHERE monitor_id = $1 AND status <> 'expected'
              ORDER BY created_at DESC LIMIT 1`,
@@ -238,14 +294,11 @@ async function verify(id, actor) {
   }
 
   const payload = action.payload || {}
-  let monitorId = payload.monitorId
-  if (!monitorId && action.incident_id) {
-    const inc = await query(`SELECT monitor_id FROM incident WHERE id = $1`, [action.incident_id])
-    monitorId = inc.rows[0]?.monitor_id
-  }
+  // The incident's own monitor (ownership already checked) — never payload.monitorId.
+  const monitorId = action.incident_monitor_id || null
   let postCheckOk = false
   if (monitorId) {
-    const monitor = await query(`SELECT * FROM monitor WHERE id = $1`, [monitorId])
+    const monitor = await query(`SELECT * FROM monitor WHERE id = $1 AND user_id = $2`, [monitorId, actor])
     if (monitor.rows[0]) {
       const { runProbe } = require('./probes')
       const probe = await runProbe(monitor.rows[0])
@@ -283,7 +336,8 @@ async function verify(id, actor) {
       await rag.index(
         'incident_fix',
         action.incident_id,
-        `Verified ${action.kind} recovery on ${monitorName} (post-check passed): ${JSON.stringify(payload).slice(0, 300)}`
+        `Verified ${action.kind} recovery on ${monitorName} (post-check passed): ${JSON.stringify(payload).slice(0, 300)}`,
+        actor // scoped to this user — never retrievable by other accounts
       )
     } catch (e) {
       console.error('RAG index of verified fix failed (non-fatal):', e.message)

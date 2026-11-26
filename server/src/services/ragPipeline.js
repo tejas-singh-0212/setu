@@ -8,7 +8,7 @@
 // Everything degrades gracefully: if the pipeline is down or slow, callers
 // get null and fall back to the built-in behaviour, so the demo never dies.
 
-const BASE = () => (process.env.RAG_SERVICE_URL || 'http://localhost:8000').replace(/\/+$/, '')
+const BASE = () => (process.env.RAG_SERVICE_URL || 'http://127.0.0.1:8000').replace(/\/+$/, '')
 
 // change: { changeId, changeType, diffSummary, expectedSchema, observedSchema }
 // changeType uses the pipeline's vocabulary (field_renamed | type_changed |
@@ -21,7 +21,12 @@ async function suggestFix(change, userId, timeoutMs = 10000) {
     const timer = setTimeout(() => controller.abort(), timeoutMs)
     const res = await fetch(`${BASE()}/internal/v1/schema-fix-suggestions`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json', 'X-User-Id': String(userId) },
+      headers: {
+        'Content-Type': 'application/json',
+        'X-User-Id': String(userId),
+        // Shared secret proving the call comes from this backend (see rag_pipeline/api.py)
+        ...(process.env.RAG_SERVICE_TOKEN ? { 'X-Internal-Token': process.env.RAG_SERVICE_TOKEN } : {}),
+      },
       body: JSON.stringify({
         change_id: String(change.changeId),
         provider: null, // omit: dataset providers are demo-* names, not monitor names

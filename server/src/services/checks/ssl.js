@@ -1,7 +1,9 @@
 // SSL check (Part 3) — reads the peer certificate on :443.
 // Returns { sslIssuer, sslExpiresAt, sslDaysLeft }; on any failure all three are null.
 
+const net = require('net')
 const tls = require('tls')
+const { guardedLookup, assertHostAllowed } = require('../../lib/netGuard')
 
 const TIMEOUT_MS = 5000
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -23,7 +25,19 @@ function checkSsl(host, port = 443) {
       resolve(result)
     }
 
-    const socket = tls.connect({ host, port, servername: host, rejectUnauthorized: false })
+    try {
+      assertHostAllowed(host) // literal private IPs skip `lookup`
+    } catch {
+      settled = true
+      return resolve(EMPTY)
+    }
+    const socket = tls.connect({
+      host,
+      port,
+      servername: net.isIP(host) ? undefined : host,
+      lookup: guardedLookup, // refuses private/metadata addresses at connect time
+      rejectUnauthorized: false,
+    })
     socket.setTimeout(TIMEOUT_MS, () => done(EMPTY))
     socket.on('error', () => done(EMPTY))
     socket.on('secureConnect', () => {

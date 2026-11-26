@@ -33,7 +33,11 @@ module.exports = {
 
     const expected = normalizeExpected(expectedRow.rows[0].schema_json)
     const changes = diffSchemas(expected, detected)
-    if (!changes.length) return
+    // A purely additive change (new fields only) is backward-compatible: not
+    // drift. It also has no change_type enum value, so it must never reach the
+    // changeevent insert below.
+    const breaking = changes.filter((c) => c.changeType !== 'added')
+    if (!breaking.length) return
 
     // Mark this probe as a schema failure
     await query(`UPDATE probe SET schema_ok = false WHERE id = $1`, [probe.id])
@@ -61,9 +65,9 @@ module.exports = {
     )
     let changeId = existingChange.rows[0]?.id
     if (!changeId) {
-      const primary = changes.find((c) => c.changeType === 'renamed')
-        || changes.find((c) => c.changeType === 'removed')
-        || changes[0]
+      const primary = breaking.find((c) => c.changeType === 'renamed')
+        || breaking.find((c) => c.changeType === 'removed')
+        || breaking[0]
       const inserted = await query(
         `INSERT INTO changeevent (monitor_id, old_schema_id, new_schema_id, change_type, status)
          VALUES ($1, $2, $3, $4, 'open') RETURNING id`,

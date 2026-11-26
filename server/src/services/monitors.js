@@ -6,39 +6,17 @@ const { Pool } = require('pg')
 const { query, execute } = require('../lib/db')
 const settingsSvc = require('./settings')
 
+const { isPrivateIp } = require('../lib/netGuard')
+
 // ---------- SSRF guard: monitor URLs must be public http(s) targets ----------
-// Probes fetch whatever URL is stored, so creation is the single choke point
-// (URL is not editable afterwards). Blocks localhost, private ranges, link-
-// local/metadata addresses and hostnames that resolve to them.
+// First line of defence at creation (clear 400 for the user). Probes enforce
+// the same rule again at connect time and on every redirect hop
+// (lib/netGuard.safeFetch), which also covers DNS rebinding.
 
 function badRequest(message) {
   const e = new Error(message)
   e.status = 400
   return e
-}
-
-function isPrivateIp(ip) {
-  if (net.isIPv4(ip)) {
-    const [a, b] = ip.split('.').map(Number)
-    if (a === 10) return true // 10.0.0.0/8
-    if (a === 127) return true // loopback
-    if (a === 0) return true
-    if (a === 169 && b === 254) return true // link-local incl. cloud metadata
-    if (a === 172 && b >= 16 && b <= 31) return true // 172.16.0.0/12
-    if (a === 192 && b === 168) return true // 192.168.0.0/16
-    if (a === 100 && b >= 64 && b <= 127) return true // CGNAT 100.64.0.0/10
-    return false
-  }
-  if (net.isIPv6(ip)) {
-    const v = ip.toLowerCase()
-    if (v === '::1' || v === '::') return true
-    if (v.startsWith('fc') || v.startsWith('fd')) return true // ULA
-    if (v.startsWith('fe80')) return true // link-local
-    const mapped = v.match(/^::ffff:(\d+\.\d+\.\d+\.\d+)$/)
-    if (mapped) return isPrivateIp(mapped[1])
-    return false
-  }
-  return false
 }
 
 async function assertPublicUrl(rawUrl) {

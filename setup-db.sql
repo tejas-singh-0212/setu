@@ -219,6 +219,13 @@ CREATE TABLE IF NOT EXISTS Embedding (
 );
 CREATE INDEX IF NOT EXISTS idx_embedding_vector ON Embedding
   USING hnsw (vector vector_cosine_ops);
+-- Upgrade older DBs: verified-fix embeddings were global; scope them to the
+-- incident owner. Knowledge rows keep user_id NULL (shared reference text).
+ALTER TABLE Embedding ADD COLUMN IF NOT EXISTS user_id UUID REFERENCES "User"(id) ON DELETE CASCADE;
+CREATE INDEX IF NOT EXISTS idx_embedding_user ON Embedding (user_id);
+UPDATE Embedding e SET user_id = m.user_id
+  FROM Incident i JOIN Monitor m ON m.id = i.monitor_id
+  WHERE e.kind <> 'knowledge' AND e.ref_id = i.id AND e.user_id IS NULL;
 
 CREATE TABLE IF NOT EXISTS Setting (
   key VARCHAR(100) NOT NULL,

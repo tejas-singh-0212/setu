@@ -45,18 +45,19 @@ async function diagnose(incident) {
   let ragHits = []
   let ragUsed = 0
   try {
+    const owner = await query(`SELECT user_id FROM monitor WHERE id = $1`, [incident.monitor_id])
+    const ownerId = owner.rows[0]?.user_id || null
     const enabled = await query(
-      `SELECT s.value FROM setting s
-       JOIN monitor m ON m.id = $2
-       WHERE s.key = 'ragEnabled' AND s.user_id = m.user_id`,
-      ['ragEnabled', incident.monitor_id]
+      `SELECT value FROM setting WHERE key = 'ragEnabled' AND user_id = $1`,
+      [ownerId]
     )
     const on = enabled.rows.length ? enabled.rows[0].value !== false : true
-    if (on) {
-      ragHits = await rag.retrieve(`${incident.title} ${incident.probable_cause || ''}`.trim(), 4)
+    if (on && ownerId) {
+      ragHits = await rag.retrieve(`${incident.title} ${incident.probable_cause || ''}`.trim(), 4, ownerId)
       ragUsed = ragHits.length
     }
-  } catch {
+  } catch (e) {
+    console.error('RAG retrieval failed during diagnosis (continuing rules-only):', e.message)
     ragUsed = 0
   }
 
